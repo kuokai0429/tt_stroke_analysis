@@ -136,3 +136,6 @@ dmypy.json
 *.MOV
 *.mp4
 *.avi
+*2D.png
+*3D.png
+*pose.png
