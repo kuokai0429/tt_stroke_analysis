@@ -1,3 +1,7 @@
 <Stroke Analysis 操作指令>
 
-1. 
+# 3D Pose Estimation Inference
+python common/pose3d/vis_longframes.py --video other_f1_left.mp4 --out_video_sf 0 --out_video_dl 1000 --pose3d_rotation 0 0 0
+
+# Stroke analysis
+python run.py --subject1 other_f1_left --subject2 other_m1_left
