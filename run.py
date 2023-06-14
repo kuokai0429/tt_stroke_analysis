@@ -82,15 +82,39 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
 
+    # f = plt.figure()
+    # plt.plot(s1_time, s1_strokes_arm_ang, label=args.subject1)
+    # plt.plot(s2_time, s2_strokes_arm_ang, label=args.subject2)
+    # plt.xlabel('sec')
+    # plt.ylabel('arm angle')
+    # plt.legend()
+    # plt.show()
+    
+    # f.savefig(f"./output/arm_ang_{TIMESTAMP[:-1]}")
+
     f = plt.figure()
     plt.plot(s1_time, s1_strokes_arm_ang, label=args.subject1)
-    plt.plot(s2_time, s2_strokes_arm_ang, label=args.subject2)
     plt.xlabel('sec')
-    plt.ylabel('arm angle')
+    plt.ylabel('velocity (pixel/s)')
     plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#1f77b4")
+    ax.get_lines()[0].set_color("#1f77b4")
     plt.show()
     
-    f.savefig(f"./output/arm_ang_{TIMESTAMP[:-1]}")
+    f.savefig(f"./output/arm_ang_s1_{TIMESTAMP[:-1]}")
+
+    f = plt.figure()
+    plt.plot(s2_time, s2_strokes_arm_ang, label=args.subject2)
+    plt.xlabel('sec')
+    plt.ylabel('velocity (pixel/s)')
+    plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#ff7f0e")
+    ax.get_lines()[0].set_color("#ff7f0e")
+    plt.show()
+
+    f.savefig(f"./output/arm_ang_s2_{TIMESTAMP[:-1]}")
 
 
     ## Calculate Subject Arm Bending Angles Similarities
@@ -122,15 +146,39 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
 
+    # f = plt.figure()
+    # plt.plot(s1_time, s1_strokes_knee_ang, label=args.subject1)
+    # plt.plot(s2_time, s2_strokes_knee_ang, label=args.subject2)
+    # plt.xlabel('sec')
+    # plt.ylabel('knee angle')
+    # plt.legend()
+    # plt.show()
+    
+    # f.savefig(f"./output/knee_ang_{TIMESTAMP[:-1]}")
+
     f = plt.figure()
     plt.plot(s1_time, s1_strokes_knee_ang, label=args.subject1)
-    plt.plot(s2_time, s2_strokes_knee_ang, label=args.subject2)
     plt.xlabel('sec')
-    plt.ylabel('knee angle')
+    plt.ylabel('velocity (pixel/s)')
     plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#1f77b4")
+    ax.get_lines()[0].set_color("#1f77b4")
     plt.show()
     
-    f.savefig(f"./output/knee_ang_{TIMESTAMP[:-1]}")
+    f.savefig(f"./output/knee_ang_s1_{TIMESTAMP[:-1]}")
+
+    f = plt.figure()
+    plt.plot(s2_time, s2_strokes_knee_ang, label=args.subject2)
+    plt.xlabel('sec')
+    plt.ylabel('velocity (pixel/s)')
+    plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#ff7f0e")
+    ax.get_lines()[0].set_color("#ff7f0e")
+    plt.show()
+
+    f.savefig(f"./output/knee_ang_s2_{TIMESTAMP[:-1]}")
 
 
     ## Calculate Subject Knee Bending Angles Similarities
@@ -163,15 +211,39 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(1, len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(1, len(s2_strokes_kp))]  
 
+    # f = plt.figure()
+    # plt.plot(s1_time, s1_cog_trans, label=args.subject1)
+    # plt.plot(s2_time, s2_cog_trans, label=args.subject2)
+    # plt.xlabel('sec')
+    # plt.ylabel('velocity (pixel/s)')
+    # plt.legend()
+    # plt.show()
+    
+    # f.savefig(f"./output/cog_trans_{TIMESTAMP[:-1]}")
+
     f = plt.figure()
     plt.plot(s1_time, s1_cog_trans, label=args.subject1)
+    plt.xlabel('sec')
+    plt.ylabel('velocity (pixel/s)')
+    plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#1f77b4")
+    ax.get_lines()[0].set_color("#1f77b4")
+    plt.show()
+    
+    f.savefig(f"./output/cog_trans_s1_{TIMESTAMP[:-1]}")
+
+    f = plt.figure()
     plt.plot(s2_time, s2_cog_trans, label=args.subject2)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
     plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#ff7f0e")
+    ax.get_lines()[0].set_color("#ff7f0e")
     plt.show()
-    
-    f.savefig(f"./output/cog_trans_{TIMESTAMP[:-1]}")
+
+    f.savefig(f"./output/cog_trans_s2_{TIMESTAMP[:-1]}")
 
 
     ## Calculate Subject Center of Gravity Transition Similarities
@@ -204,15 +276,39 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(1, len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(1, len(s2_strokes_kp))]  
 
+    # f = plt.figure()
+    # plt.plot(s1_time, s1_strokes_speed, label=args.subject1)
+    # plt.plot(s2_time, s2_strokes_speed, label=args.subject2)
+    # plt.xlabel('sec')
+    # plt.ylabel('velocity (pixel/s)')
+    # plt.legend()
+    # plt.show()
+    
+    # f.savefig(f"./output/stroke_speed_{TIMESTAMP[:-1]}")
+
     f = plt.figure()
     plt.plot(s1_time, s1_strokes_speed, label=args.subject1)
+    plt.xlabel('sec')
+    plt.ylabel('velocity (pixel/s)')
+    plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#1f77b4")
+    ax.get_lines()[0].set_color("#1f77b4")
+    plt.show()
+    
+    f.savefig(f"./output/stroke_speed_s1_{TIMESTAMP[:-1]}")
+
+    f = plt.figure()
     plt.plot(s2_time, s2_strokes_speed, label=args.subject2)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
     plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#ff7f0e")
+    ax.get_lines()[0].set_color("#ff7f0e")
     plt.show()
-    
-    f.savefig(f"./output/stroke_speed_{TIMESTAMP[:-1]}")
+
+    f.savefig(f"./output/stroke_speed_s2_{TIMESTAMP[:-1]}")
 
 
     ## Calculate Subject Stroke Speed Similarities
