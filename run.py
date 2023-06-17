@@ -74,13 +74,15 @@ def load_subject_strokes_keypoints(subject, annot_df):
 
 def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
 
-    ## Plot Subject Arm Bending Angles
+    ## Calculate Subject Arm Bending Angles
 
     s1_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s1_strokes_kp])
     s2_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s2_strokes_kp])
 
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
+
+    ## Plot Subjects together
 
     # f = plt.figure()
     # plt.plot(s1_time, s1_strokes_arm_ang, label=args.subject1)
@@ -91,6 +93,8 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
     # plt.show()
     
     # f.savefig(f"./output/arm_ang_{TIMESTAMP[:-1]}")
+
+    ## Plot Subjects seperately
 
     f = plt.figure()
     plt.plot(s1_time, s1_strokes_arm_ang, label=args.subject1)
@@ -134,7 +138,7 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
 
 def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
 
-    ## Plot Subject Knee Bending Angles
+    ## Calculate Subject Knee Bending Angles
 
     s1_strokes_knee_ang = np.array([(calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["r_knee"]], f[h36m_skeleton["r_foot"]]) + 
                                     calculateAngle(f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_knee"]], f[h36m_skeleton["l_foot"]])) / 2
@@ -146,6 +150,8 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
 
+    ## Plot Subjects together
+
     # f = plt.figure()
     # plt.plot(s1_time, s1_strokes_knee_ang, label=args.subject1)
     # plt.plot(s2_time, s2_strokes_knee_ang, label=args.subject2)
@@ -155,6 +161,8 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
     # plt.show()
     
     # f.savefig(f"./output/knee_ang_{TIMESTAMP[:-1]}")
+
+    ## Plot Subjects seperately
 
     f = plt.figure()
     plt.plot(s1_time, s1_strokes_knee_ang, label=args.subject1)
@@ -198,7 +206,7 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
 
 def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
 
-    ## Plot Subject Center of Gravity Transitions
+    ## Calculate Subject Center of Gravity Transitions
 
     s1_strokes_cog = np.array([(f[h36m_skeleton["spine"]] + f[h36m_skeleton["hip"]]) / 2 for f in s1_strokes_kp])
     s2_strokes_cog = np.array([(f[h36m_skeleton["spine"]] + f[h36m_skeleton["hip"]]) / 2 for f in s2_strokes_kp])
@@ -211,6 +219,8 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(1, len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(1, len(s2_strokes_kp))]  
 
+    ## Plot Subjects together
+
     # f = plt.figure()
     # plt.plot(s1_time, s1_cog_trans, label=args.subject1)
     # plt.plot(s2_time, s2_cog_trans, label=args.subject2)
@@ -220,6 +230,8 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
     # plt.show()
     
     # f.savefig(f"./output/cog_trans_{TIMESTAMP[:-1]}")
+
+    ## Plot Subjects seperately
 
     f = plt.figure()
     plt.plot(s1_time, s1_cog_trans, label=args.subject1)
@@ -263,7 +275,7 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
 
 def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
 
-    ## Plot Subject Stroke Speed
+    ## Calculate Subject Stroke Speed
 
     s1_strokes_wrist = np.array([f[h36m_skeleton["r_wrist"]] for f in s1_strokes_kp])
     s2_strokes_wrist = np.array([f[h36m_skeleton["r_wrist"]] for f in s2_strokes_kp])
@@ -276,6 +288,8 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(1, len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(1, len(s2_strokes_kp))]  
 
+    ## Plot Subjects together
+    
     # f = plt.figure()
     # plt.plot(s1_time, s1_strokes_speed, label=args.subject1)
     # plt.plot(s2_time, s2_strokes_speed, label=args.subject2)
@@ -285,6 +299,8 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
     # plt.show()
     
     # f.savefig(f"./output/stroke_speed_{TIMESTAMP[:-1]}")
+
+    ## Plot Subjects seperately
 
     f = plt.figure()
     plt.plot(s1_time, s1_strokes_speed, label=args.subject1)
