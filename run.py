@@ -326,6 +326,17 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
     return similarity
 
 
+def dtw_function():
+    '''
+    https://dsp.stackexchange.com/questions/66341/need-a-similarity-metric-that-describes-these-two-curve-as-highly-similar
+    '''
+    similarity = 0
+
+    
+
+    return similarity
+
+
 # Define Configurations
 SEED = 0
 SOURCE_FOLDER = "input\\"
