@@ -9,9 +9,6 @@ import random
 import time
 from datetime import datetime
 import numpy as np
-from numpy import sin
-from numpy import sqrt
-from numpy import arange
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.font_manager import fontManager
@@ -80,8 +77,8 @@ def load_subject_strokes_keypoints(subject, annot_df):
 def plot_subject_seperate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_feature, s2_feature):
 
     f = plt.figure()
-    plt.xlim([0, max(max(s1_time), max(s2_time))])
-    plt.ylim([0, max(max(s1_feature), max(s2_feature))])
+    plt.xlim([min(min(s1_time), min(s2_time)), max(max(s1_time), max(s2_time))])
+    plt.ylim([min(min(s1_feature), min(s2_feature)), max(max(s1_feature), max(s2_feature))])
     plt.plot(s1_time, s1_feature, label=args.subject1)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -94,8 +91,8 @@ def plot_subject_seperate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_fea
     f.savefig(f"./output/{feature_name}_s1_{TIMESTAMP[:-1]}")
 
     f = plt.figure()
-    plt.xlim([0, max(max(s1_time), max(s2_time))])
-    plt.ylim([0, max(max(s1_feature), max(s2_feature))])
+    plt.xlim([min(min(s1_time), min(s2_time)), max(max(s1_time), max(s2_time))])
+    plt.ylim([min(min(s1_feature), min(s2_feature)), max(max(s1_feature), max(s2_feature))])
     plt.plot(s2_time, s2_feature, label=args.subject2)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
@@ -124,13 +121,13 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
 
     ## Plot Subjects together with 1d-rescale
 
-    s1_x_line = arange(0, len(s1_time), 1)
+    s1_x_line = np.arange(0, len(s1_time), 1)
     s1_x_curve = CubicSpline(s1_x_line, s1_time, bc_type='natural')
     s1_y_curve = CubicSpline(s1_x_line, s1_feature, bc_type='natural')
 
-    s2_x_line = arange(0, len(s2_time), 1)
-    s2_x_curve = CubicSpline(arange(0, len(s2_time), 1), s2_time, bc_type='natural')
-    s2_y_curve = CubicSpline(arange(0, len(s2_time), 1), s2_feature, bc_type='natural')
+    s2_x_line = np.arange(0, len(s2_time), 1)
+    s2_x_curve = CubicSpline(np.arange(0, len(s2_time), 1), s2_time, bc_type='natural')
+    s2_y_curve = CubicSpline(np.arange(0, len(s2_time), 1), s2_feature, bc_type='natural')
 
     max_x, min_x = max(max(s1_time), max(s2_time)),  min(max(s1_time), max(s2_time))
     max_y, min_y = max(max(s1_feature), max(s2_feature)),  min(max(s1_feature), max(s2_feature))
@@ -158,13 +155,13 @@ def subject_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_f
     max_x, min_x = max(max(s1_time), max(s2_time)),  min(max(s1_time), max(s2_time))
     max_y, min_y = max(max(s1_feature), max(s2_feature)),  min(max(s1_feature), max(s2_feature))
 
-    s1_x_line = arange(0, len(s1_time), 1)
+    s1_x_line = np.arange(0, len(s1_time), 1)
     s1_x_curve = CubicSpline(s1_x_line, s1_time, bc_type='natural')
     s1_y_curve = CubicSpline(s1_x_line, s1_feature, bc_type='natural')
 
-    s2_x_line = arange(0, len(s2_time), 1)
-    s2_x_curve = CubicSpline(arange(0, len(s2_time), 1), s2_time, bc_type='natural')
-    s2_y_curve = CubicSpline(arange(0, len(s2_time), 1), s2_feature, bc_type='natural')
+    s2_x_line = np.arange(0, len(s2_time), 1)
+    s2_x_curve = CubicSpline(np.arange(0, len(s2_time), 1), s2_time, bc_type='natural')
+    s2_y_curve = CubicSpline(np.arange(0, len(s2_time), 1), s2_feature, bc_type='natural')
 
     alignment_threeway = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)),
         keep_internals=True)
@@ -180,7 +177,7 @@ def subject_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_f
         keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
 
     similarity = (subject_distance / (max_distance - min_distance)) * 100
-    similarity = 100 - similarity
+    similarity = max((100 - similarity), 0)
 
     print(f"Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {min_distance}")
 
@@ -191,8 +188,11 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
 
     ## Calculate Subject Arm Bending Angles
 
-    s1_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s1_strokes_kp])
-    s2_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s2_strokes_kp])
+    # s1_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s1_strokes_kp])
+    # s2_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s2_strokes_kp])
+
+    s1_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["throat"]], f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_strokes_kp])
+    s2_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["throat"]], f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s2_strokes_kp])
 
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
@@ -205,7 +205,7 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
     ## Calculate Subject Arm Bending Angles Similarities (https://dynamictimewarping.github.io/python/)
 
     similarity = subject_similarity_function('arm_ang', s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
-    print('Arm bending angle similarity:', similarity)
+    print('Arm bending angle similarity:', similarity, end="\n\n")
 
     return similarity
 
@@ -215,7 +215,7 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
     ## Calculate Subject Knee Bending Angles
 
     s1_strokes_knee_ang = np.array([(calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["r_knee"]], f[h36m_skeleton["r_foot"]]) + 
-                                    calculateAngle(f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_knee"]], f[h36m_skeleton["l_foot"]])) / 2
+                                    calculateAngle(f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_knee"]], f[h36m_skeleton["l_foot"]])) / 2 
                                     for f in s1_strokes_kp])
     s2_strokes_knee_ang = np.array([(calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["r_knee"]], f[h36m_skeleton["r_foot"]]) + 
                                     calculateAngle(f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_knee"]], f[h36m_skeleton["l_foot"]])) / 2
@@ -232,7 +232,31 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
     ## Calculate Subject Knee Bending Angles Similarities (https://dynamictimewarping.github.io/python/)
 
     similarity = subject_similarity_function('knee_ang', s1_time, s2_time, s1_strokes_knee_ang, s2_strokes_knee_ang)
-    print('Knee bending angle similarity:', similarity)
+    print('Knee bending angle similarity:', similarity, end="\n\n")
+
+    return similarity
+
+
+def evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, pose_frontfacing_degree):
+
+    ## Calculate Subject Hip Joint relative Angle
+
+    vz, vx, vy = 0, np.cos(pose_frontfacing_degree * np.pi / 180), np.sin(pose_frontfacing_degree * np.pi / 180)
+    s1_strokes_hip_rot_ang = np.array([calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_hip"]] + (vz, vx, vy)) for f in s1_strokes_kp])
+    s2_strokes_hip_rot_ang = np.array([calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_hip"]] + (vz, vx, vy)) for f in s2_strokes_kp])
+    
+    s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
+    s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]   
+
+    ## Plot Subjects Hip Joint relative Angle
+    
+    plot_subject_seperate('hip_rot_ang', 'sec', 'degree', s1_time, s2_time, s1_strokes_hip_rot_ang, s2_strokes_hip_rot_ang)
+    plot_subject_concatenate('hip_rot_ang', 'sec', 'degree', s1_time, s2_time, s1_strokes_hip_rot_ang, s2_strokes_hip_rot_ang)
+
+    ## Calculate Subject Hip Joint relative Angles Similarities (https://dynamictimewarping.github.io/python/)
+
+    similarity = subject_similarity_function('hip_rot_ang', s1_time, s2_time, s1_strokes_hip_rot_ang, s2_strokes_hip_rot_ang)
+    print('Hip Joint relative Angle similarity:', similarity, end="\n\n")
 
     return similarity
 
@@ -260,7 +284,7 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
     ## Calculate Subject Center of Gravity Transitions Similarities (https://dynamictimewarping.github.io/python/)
 
     similarity = subject_similarity_function('cog_trans', s1_time, s2_time, s1_cog_trans, s2_cog_trans)
-    print('Center of Gravity Transition similarity:', similarity)
+    print('Center of Gravity Transition similarity:', similarity, end="\n\n")
 
     return similarity
 
@@ -288,7 +312,7 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
     ## Calculate Subject Stroke Speed Similarities (https://dynamictimewarping.github.io/python/)
 
     similarity = subject_similarity_function('stroke_speed', s1_time, s2_time, s1_strokes_speed, s2_strokes_speed)
-    print('Stroke Speed similarity: ', similarity)
+    print('Stroke Speed similarity: ', similarity, end="\n\n")
 
     return similarity
 
@@ -329,7 +353,8 @@ if __name__ == "__main__":
     
     s1_strokes_kp, s1_video_fps = load_subject_strokes_keypoints(args.subject1, annot_df)
     s2_strokes_kp, s2_video_fps = load_subject_strokes_keypoints(args.subject2, annot_df)
-
+    print()
+    
 
     ## Stroke Analysis 
 
@@ -340,11 +365,10 @@ if __name__ == "__main__":
     knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp)
 
     # 3. Evaluate Hip joint rotation angle
-    # hip_rot_ang_similarity =
+    hip_rot_ang_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, 180)
 
     # 4. Evaluate Center of gravity transitions
     cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp)
 
     # 5. Evaluate Speed of stroke
     strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp)
-
