@@ -9,6 +9,9 @@ import random
 import time
 from datetime import datetime
 import numpy as np
+from numpy import sin
+from numpy import sqrt
+from numpy import arange
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.font_manager import fontManager
@@ -17,6 +20,8 @@ import seaborn as sns
 import pandas as pd
 from tqdm import tqdm
 import math
+from dtw import *
+from scipy.interpolate import CubicSpline
 
 
 def init_seed(seed):
@@ -82,21 +87,11 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
 
-    ## Plot Subjects together
-
-    # f = plt.figure()
-    # plt.plot(s1_time, s1_strokes_arm_ang, label=args.subject1)
-    # plt.plot(s2_time, s2_strokes_arm_ang, label=args.subject2)
-    # plt.xlabel('sec')
-    # plt.ylabel('arm angle')
-    # plt.legend()
-    # plt.show()
-    
-    # f.savefig(f"./output/arm_ang_{TIMESTAMP[:-1]}")
-
     ## Plot Subjects seperately
 
     f = plt.figure()
+    plt.xlim([0, max(max(s1_time), max(s2_time))])
+    plt.ylim([0, max(max(s1_strokes_arm_ang), max(s2_strokes_arm_ang))])
     plt.plot(s1_time, s1_strokes_arm_ang, label=args.subject1)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
@@ -109,6 +104,8 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
     f.savefig(f"./output/arm_ang_s1_{TIMESTAMP[:-1]}")
 
     f = plt.figure()
+    plt.xlim([0, max(max(s1_time), max(s2_time))])
+    plt.ylim([0, max(max(s1_strokes_arm_ang), max(s2_strokes_arm_ang))])
     plt.plot(s2_time, s2_strokes_arm_ang, label=args.subject2)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
@@ -120,6 +117,17 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
 
     f.savefig(f"./output/arm_ang_s2_{TIMESTAMP[:-1]}")
 
+    ## Plot Subjects together
+
+    # f = plt.figure()
+    # plt.plot(s1_time, s1_strokes_arm_ang, label=args.subject1)
+    # plt.plot(s2_time, s2_strokes_arm_ang, label=args.subject2)
+    # plt.xlabel('sec')
+    # plt.ylabel('arm angle')
+    # plt.legend()
+    # plt.show()
+    
+    # f.savefig(f"./output/arm_ang_{TIMESTAMP[:-1]}")
 
     ## Calculate Subject Arm Bending Angles Similarities
 
@@ -150,21 +158,11 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
 
-    ## Plot Subjects together
-
-    # f = plt.figure()
-    # plt.plot(s1_time, s1_strokes_knee_ang, label=args.subject1)
-    # plt.plot(s2_time, s2_strokes_knee_ang, label=args.subject2)
-    # plt.xlabel('sec')
-    # plt.ylabel('knee angle')
-    # plt.legend()
-    # plt.show()
-    
-    # f.savefig(f"./output/knee_ang_{TIMESTAMP[:-1]}")
-
     ## Plot Subjects seperately
 
     f = plt.figure()
+    plt.xlim([0, max(max(s1_time), max(s2_time))])
+    plt.ylim([0, max(max(s1_strokes_knee_ang), max(s2_strokes_knee_ang))])
     plt.plot(s1_time, s1_strokes_knee_ang, label=args.subject1)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
@@ -177,6 +175,8 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
     f.savefig(f"./output/knee_ang_s1_{TIMESTAMP[:-1]}")
 
     f = plt.figure()
+    plt.xlim([0, max(max(s1_time), max(s2_time))])
+    plt.ylim([0, max(max(s1_strokes_knee_ang), max(s2_strokes_knee_ang))])
     plt.plot(s2_time, s2_strokes_knee_ang, label=args.subject2)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
@@ -188,6 +188,17 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
 
     f.savefig(f"./output/knee_ang_s2_{TIMESTAMP[:-1]}")
 
+    ## Plot Subjects together
+
+    # f = plt.figure()
+    # plt.plot(s1_time, s1_strokes_knee_ang, label=args.subject1)
+    # plt.plot(s2_time, s2_strokes_knee_ang, label=args.subject2)
+    # plt.xlabel('sec')
+    # plt.ylabel('knee angle')
+    # plt.legend()
+    # plt.show()
+    
+    # f.savefig(f"./output/knee_ang_{TIMESTAMP[:-1]}")
 
     ## Calculate Subject Knee Bending Angles Similarities
 
@@ -219,21 +230,11 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(1, len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(1, len(s2_strokes_kp))]  
 
-    ## Plot Subjects together
-
-    # f = plt.figure()
-    # plt.plot(s1_time, s1_cog_trans, label=args.subject1)
-    # plt.plot(s2_time, s2_cog_trans, label=args.subject2)
-    # plt.xlabel('sec')
-    # plt.ylabel('velocity (pixel/s)')
-    # plt.legend()
-    # plt.show()
-    
-    # f.savefig(f"./output/cog_trans_{TIMESTAMP[:-1]}")
-
     ## Plot Subjects seperately
 
     f = plt.figure()
+    plt.xlim([0, max(max(s1_time), max(s2_time))])
+    plt.ylim([0, max(max(s1_cog_trans), max(s2_cog_trans))])
     plt.plot(s1_time, s1_cog_trans, label=args.subject1)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
@@ -246,6 +247,8 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
     f.savefig(f"./output/cog_trans_s1_{TIMESTAMP[:-1]}")
 
     f = plt.figure()
+    plt.xlim([0, max(max(s1_time), max(s2_time))])
+    plt.ylim([0, max(max(s1_cog_trans), max(s2_cog_trans))])
     plt.plot(s2_time, s2_cog_trans, label=args.subject2)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
@@ -257,6 +260,17 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
 
     f.savefig(f"./output/cog_trans_s2_{TIMESTAMP[:-1]}")
 
+    ## Plot Subjects together
+
+    # f = plt.figure()
+    # plt.plot(s1_time, s1_cog_trans, label=args.subject1)
+    # plt.plot(s2_time, s2_cog_trans, label=args.subject2)
+    # plt.xlabel('sec')
+    # plt.ylabel('velocity (pixel/s)')
+    # plt.legend()
+    # plt.show()
+    
+    # f.savefig(f"./output/cog_trans_{TIMESTAMP[:-1]}")
 
     ## Calculate Subject Center of Gravity Transition Similarities
 
@@ -288,7 +302,37 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
     s1_time = [(i / s1_video_fps) for i in range(1, len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(1, len(s2_strokes_kp))]  
 
-    ## Plot Subjects together
+    ## Plot Subjects seperately
+
+    f = plt.figure()
+    plt.xlim([0, max(max(s1_time), max(s2_time))])
+    plt.ylim([0, max(max(s1_strokes_speed), max(s2_strokes_speed))])
+    plt.plot(s1_time, s1_strokes_speed, label=args.subject1)
+    plt.xlabel('sec')
+    plt.ylabel('velocity (pixel/s)')
+    plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#1f77b4")
+    ax.get_lines()[0].set_color("#1f77b4")
+    # plt.show()
+    
+    # f.savefig(f"./output/stroke_speed_s1_{TIMESTAMP[:-1]}")
+
+    f = plt.figure()
+    plt.xlim([0, max(max(s1_time), max(s2_time))])
+    plt.ylim([0, max(max(s1_strokes_speed), max(s2_strokes_speed))])
+    plt.plot(s2_time, s2_strokes_speed, label=args.subject2)
+    plt.xlabel('sec')
+    plt.ylabel('velocity (pixel/s)')
+    plt.legend()
+    ax = plt.gca()
+    ax.get_legend().legendHandles[0].set_color("#ff7f0e")
+    ax.get_lines()[0].set_color("#ff7f0e")
+    # plt.show()
+
+    # f.savefig(f"./output/stroke_speed_s2_{TIMESTAMP[:-1]}")
+
+    ## Plot Subjects together without 1d-rescale
     
     # f = plt.figure()
     # plt.plot(s1_time, s1_strokes_speed, label=args.subject1)
@@ -300,34 +344,32 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
     
     # f.savefig(f"./output/stroke_speed_{TIMESTAMP[:-1]}")
 
-    ## Plot Subjects seperately
+    ## Plot Subjects together with 1d-rescale
+
+    s1_x_line = arange(0, len(s1_time), 1)
+    s1_x_curve = CubicSpline(s1_x_line, s1_time, bc_type='natural')
+    s1_y_curve = CubicSpline(s1_x_line, s1_strokes_speed, bc_type='natural')
+
+    s2_x_line = arange(0, len(s2_time), 1)
+    s2_x_curve = CubicSpline(arange(0, len(s2_time), 1), s2_time, bc_type='natural')
+    s2_y_curve = CubicSpline(arange(0, len(s2_time), 1), s2_strokes_speed, bc_type='natural')
+
+    max_x, min_x = max(max(s1_time), max(s2_time)),  min(max(s1_time), max(s2_time))
+    max_y, min_y = max(max(s1_strokes_speed), max(s2_strokes_speed)),  min(max(s1_strokes_speed), max(s2_strokes_speed))
+    factor = max_x / min_x
+    factor_s1, factor_s2 = (1, factor) if max(s1_time) > max(s2_time) else (factor, 1)
 
     f = plt.figure()
-    plt.plot(s1_time, s1_strokes_speed, label=args.subject1)
+    plt.plot(factor_s1 * s1_x_curve(s1_x_line), s1_y_curve(s1_x_line), label=args.subject1)
+    plt.plot(factor_s2 * s2_x_curve(s2_x_line), s2_y_curve(s2_x_line), label=args.subject2)
     plt.xlabel('sec')
     plt.ylabel('velocity (pixel/s)')
     plt.legend()
-    ax = plt.gca()
-    ax.get_legend().legendHandles[0].set_color("#1f77b4")
-    ax.get_lines()[0].set_color("#1f77b4")
-    plt.show()
-    
-    f.savefig(f"./output/stroke_speed_s1_{TIMESTAMP[:-1]}")
+    # plt.show()
 
-    f = plt.figure()
-    plt.plot(s2_time, s2_strokes_speed, label=args.subject2)
-    plt.xlabel('sec')
-    plt.ylabel('velocity (pixel/s)')
-    plt.legend()
-    ax = plt.gca()
-    ax.get_legend().legendHandles[0].set_color("#ff7f0e")
-    ax.get_lines()[0].set_color("#ff7f0e")
-    plt.show()
+    # f.savefig(f"./output/stroke_speed_{TIMESTAMP[:-1]}")
 
-    f.savefig(f"./output/stroke_speed_s2_{TIMESTAMP[:-1]}")
-
-
-    ## Calculate Subject Stroke Speed Similarities
+    ## Calculate Subject Stroke Speed Similarities ver1
 
     s1_mean, s1_std = np.mean(s1_strokes_speed), np.std(s1_strokes_speed, ddof=0)
     s2_mean, s2_std = np.mean(s2_strokes_speed), np.std(s2_strokes_speed, ddof=1)
@@ -335,22 +377,38 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
     mean_error = max((1 - (abs(s1_mean - s2_mean)/s2_mean)) * 20, 0) # 0 <= mean_error
     std_error  = max((1 - (abs(s1_std - s2_std)/s2_std)) * 80, 0) # 0 <= std_error
 
-    similarity = int(round(mean_error + std_error))
+    similarity_1 = int(round(mean_error + std_error))
 
-    print('Stroke Speed similarity:', similarity)
+    print('Stroke Speed similarity ver1: ', similarity_1)
 
-    return similarity
+    ## Calculate Subject Stroke Speed Similarities ver2 (https://dynamictimewarping.github.io/python/)
 
-
-def dtw_function():
-    '''
-    https://dsp.stackexchange.com/questions/66341/need-a-similarity-metric-that-describes-these-two-curve-as-highly-similar
-    '''
-    similarity = 0
-
+    dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)),
+        keep_internals=True).plot(type="threeway")
+    # alignment = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)),
+    #     keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c"))
+    alignment = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s1_y_curve(np.linspace(0, len(s1_time), 1000)),
+        keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c"))
+    alignment.plot(type="twoway",offset=-2)
+    plt.show()
     
+    subject_distance = alignment.distance
+    max_distance = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), np.random.randint(0, max_y+1, size=1000),
+        keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
 
-    return similarity
+    # Apply logarithmic transformation to the DTW distance
+    transformed_distance = math.log(subject_distance + 1)
+    max_transformed = math.log(max_distance + 1)
+    min_transformed = math.log(1)
+    print(subject_distance, transformed_distance, max_transformed, min_transformed)
+
+    # Normalize the transformed distance to a similarity score percentage
+    similarity_2 = (transformed_distance / (max_transformed - min_transformed)) * 100
+    similarity_2 = 100 - similarity_2 
+
+    print('Stroke Speed similarity ver2: ', similarity_2)
+
+    return similarity_1, similarity_2
 
 
 # Define Configurations
@@ -394,16 +452,16 @@ if __name__ == "__main__":
     ## Stroke Analysis 
 
     # 1. Evaluate Arm bending angle
-    arm_ang_similarity = evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp)
+    # arm_ang_similarity = evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp)
 
     # 2. Evaluate Knee bending angle
-    knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp)
+    # knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp)
 
     # 3. Evaluate Hip joint rotation angle
     # hip_rot_ang_similarity =
 
     # 4. Evaluate Center of gravity transitions
-    cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp)
+    # cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp)
 
     # 5. Evaluate Speed of stroke
     strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp)
