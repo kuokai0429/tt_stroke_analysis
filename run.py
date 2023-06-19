@@ -86,9 +86,9 @@ def plot_subject_seperate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_fea
     ax = plt.gca()
     ax.get_legend().legendHandles[0].set_color("#1f77b4")
     ax.get_lines()[0].set_color("#1f77b4")
-    plt.show()
+    # plt.show()
     
-    f.savefig(f"./output/{feature_name}_s1_{TIMESTAMP[:-1]}")
+    f.savefig(f"./output/{TIMESTAMP}/{feature_name}_s1_{TIMESTAMP[:-1]}")
 
     f = plt.figure()
     plt.xlim([min(min(s1_time), min(s2_time)), max(max(s1_time), max(s2_time))])
@@ -100,9 +100,11 @@ def plot_subject_seperate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_fea
     ax = plt.gca()
     ax.get_legend().legendHandles[0].set_color("#ff7f0e")
     ax.get_lines()[0].set_color("#ff7f0e")
-    plt.show()
+    # plt.show()
 
-    f.savefig(f"./output/{feature_name}_s2_{TIMESTAMP[:-1]}")
+    f.savefig(f"./output/{TIMESTAMP}/{feature_name}_s2_{TIMESTAMP[:-1]}")
+
+    plt.close(f)
 
 
 def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_feature, s2_feature):
@@ -117,7 +119,7 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
     # plt.legend()
     # plt.show()
     
-    # f.savefig(f"./output/{feature_name}_{TIMESTAMP[:-1]}")
+    # f.savefig(f"./output/{TIMESTAMP}/{feature_name}_{TIMESTAMP[:-1]}")
 
     ## Plot Subjects together with 1d-rescale
 
@@ -140,9 +142,11 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend()
-    plt.show()
+    # plt.show()
 
-    f.savefig(f"./output/{feature_name}_{TIMESTAMP[:-1]}")
+    f.savefig(f"./output/{TIMESTAMP}/{feature_name}_{TIMESTAMP[:-1]}")
+
+    plt.close(f)
 
 
 def subject_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
@@ -170,8 +174,8 @@ def subject_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_f
         keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c"))
     
     alignment_threeway.plot(type="threeway")
-    alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{feature_name}_similarity_{TIMESTAMP[:-1]}")
-    plt.show()
+    alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{TIMESTAMP}/{feature_name}_similarity_{TIMESTAMP[:-1]}")
+    # plt.show()
     
     subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), np.random.randint(0, max_y+1, size=1000),
         keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
@@ -354,9 +358,11 @@ if __name__ == "__main__":
     s1_strokes_kp, s1_video_fps = load_subject_strokes_keypoints(args.subject1, annot_df)
     s2_strokes_kp, s2_video_fps = load_subject_strokes_keypoints(args.subject2, annot_df)
     print()
-    
+
 
     ## Stroke Analysis 
+
+    os.makedirs(f'output/{TIMESTAMP}')
 
     # 1. Evaluate Arm bending angle
     arm_ang_similarity = evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp)
