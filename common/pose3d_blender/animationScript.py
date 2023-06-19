@@ -3,6 +3,7 @@
 
 import numpy as np
 import bpy
+import math
 
 import sys
 import subprocess
@@ -46,6 +47,18 @@ def changeCubeLocation(cube, x, y, z, frame):
     end_frame = frame
     cube.keyframe_insert("location", frame=end_frame)
     
+
+def changeBonesLocation(cube, x1, y1, z1, x2, y2, z2, frame):
+    
+    # Change the location of the cube
+    cube.location.x = x1 + (x2 - x1)/2
+    cube.location.y = y1 + (y2 - y1)/2
+    cube.location.z = z1 + (z2 - z1)/2
+
+    # Insert keyframe at the last frame
+    end_frame = frame
+    cube.keyframe_insert("location", frame=end_frame)
+    
     
 if __name__ == "__main__":
     
@@ -79,7 +92,7 @@ if __name__ == "__main__":
     bpy.ops.object.delete()
     
     
-    ## Add Light, Camera, Plane and 17 keypoints cube into the scene
+    ## Add Light, Camera, Plane to the scene
     
     light = bpy.data.objects.new('Light', bpy.data.lights.new('light', type='POINT'))
     bpy.context.collection.objects.link(light)
@@ -91,10 +104,43 @@ if __name__ == "__main__":
     
     bpy.ops.mesh.primitive_plane_add(size=50, location=(0, 0, -5))
     
+    
+    ## Add 17 keypoints and bones of first frame to the scene
+    
+    connections = [[0, 1], [1, 2], [2, 3], [0, 4], [4, 5],
+                   [5, 6], [0, 7], [7, 8], [8, 9], [9, 10],
+                   [8, 11], [11, 12], [12, 13], [8, 14], [14, 15], [15, 16]]
+    
     for i in range(len(s1_strokes_kp[0])):
         
         loc = (s1_strokes_kp[0][i][0]*15, s1_strokes_kp[0][i][1]*15, s1_strokes_kp[0][i][1]*15)
-        bpy.ops.mesh.primitive_cube_add(size=0.5, location=loc)
+        bpy.ops.mesh.primitive_cube_add(size=0.3, location=loc)
+        
+#    for i in range(len(connections)):
+#        
+#        kp1 = np.array([s1_strokes_kp[0][connections[i][0]][0]*15, 
+#            s1_strokes_kp[0][connections[i][0]][1]*15, s1_strokes_kp[0][connections[i][0]][1]*15])
+#        kp2 = np.array([s1_strokes_kp[0][connections[i][1]][0]*15, 
+#            s1_strokes_kp[0][connections[i][1]][1]*15, s1_strokes_kp[0][connections[i][1]][1]*15])
+
+#        x, y, z = kp2[0] - kp1[0], kp2[1] - kp1[1], kp2[2] - kp1[2]
+
+#        mag = math.sqrt(x**2 + y**2)
+#        theta = math.pi/2 if mag == 0 else math.atan(z/mag)
+#        beta = 0 if x == 0 else math.atan(y/x)
+#            
+#        if (x <= 0 and y >= 0) or (x <= 0 and y <= 0):
+#            beta = math.pi + beta
+
+#        bpy.ops.mesh.primitive_cube_add(size=0.3)
+#        cube = bpy.context.scene.objects[f'Cube.{str(("%03d"% (i+17)))}']
+
+#        gap = math.sqrt(x**2 + y**2 + z**2)
+
+#        cube.scale.z = gap/2
+#        cube.location = kp1 + (kp2 - kp1)/2
+#        cube.rotation_euler.z = beta
+#        cube.rotation_euler.y = -theta + math.pi/2
         
 
     ## Get references to all cubes
@@ -102,6 +148,9 @@ if __name__ == "__main__":
     bpy.data.objects['Cube'].select_set(True)
     for i in range(1, len(s1_strokes_kp[0])):
         bpy.data.objects[f'Cube.{str(("%03d"% i))}'].select_set(True)
+        
+#    for i in range(17, 17+len(connections)):
+#        bpy.data.objects[f'Cube.{str(("%03d"% i))}'].select_set(True)
     
     cubes = bpy.context.selected_objects
     print(cubes)
@@ -117,5 +166,12 @@ if __name__ == "__main__":
     ## Change the location of the cubes
     
     for i in range(len(s1_strokes_kp)):
-        for j in range(0, len(s1_strokes_kp[0])):
+        for j in range(len(s1_strokes_kp[0])):
+            
             changeCubeLocation(cubes[j], s1_strokes_kp[i][j][0]*15, s1_strokes_kp[i][j][1]*15, s1_strokes_kp[i][j][2]*15, i)
+            
+#            for k in range(len(connections)):
+#                changeBonesLocation(cubes[j+17], 
+#                    s1_strokes_kp[i][connections[k][0]][0]*15, s1_strokes_kp[i][connections[k][0]][1]*15, s1_strokes_kp[i][connections[k][0]][2]*15, 
+#                    s1_strokes_kp[i][connections[k][1]][0]*15, s1_strokes_kp[i][connections[k][1]][1]*15, s1_strokes_kp[i][connections[k][1]][2]*15,
+#                    i)
