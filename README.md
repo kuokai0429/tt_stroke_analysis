@@ -1,4 +1,4 @@
-# Stroke Analysis
+# Table Tennis Stroke Analysis
 
 We introduce a novel method for table tennis strokes analysis.
 
