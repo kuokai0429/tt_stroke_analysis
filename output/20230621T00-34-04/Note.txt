@@ -1,0 +1,18 @@
+python run.py --subject1 other_f1_left --subject2 other_f3_left 
+(39, 17, 3)
+(52, 17, 3)
+
+Subject_distance: 7066.443198758406, Max_distance: 9298.221775761009, Min_distance: 0
+Arm bending angle similarity: 24.002208495612535
+
+Subject_distance: 5590.105205027452, Max_distance: 10896.137516981284, Min_distance: 0
+Knee bending angle similarity: 48.696451413948736
+
+Subject_distance: 10885.974733833578, Max_distance: 8857.497499618155, Min_distance: 0
+Hip Joint relative Angle similarity: 0
+
+Subject_distance: 66.02158225070504, Max_distance: 125.08159352193823, Min_distance: 0
+Center of Gravity Transition similarity: 47.21718808361246
+
+Subject_distance: 1414.6206327042664, Max_distance: 3304.2458468739414, Min_distance: 0
+Stroke Speed similarity:  57.1877911553524

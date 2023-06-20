@@ -34,26 +34,42 @@ def distance(point_1, point_2):
     return length
 
 
-def calculateAngle(point1, point2, point3):
+# def calculateAngle(point1, point2, point3):
                         
-    # Find direction vector of line AB-> & BC->
-    ABx, ABy, ABz = point1[0] - point2[0], point1[1] - point2[1], point1[2] - point2[2]
-    BCx, BCy, BCz = point3[0] - point2[0], point3[1] - point2[1], point3[2] - point2[2]
+#     # Find direction vector of line AB-> & BC->
+#     ABx, ABy, ABz = point1[0] - point2[0], point1[1] - point2[1], point1[2] - point2[2]
+#     BCx, BCy, BCz = point3[0] - point2[0], point3[1] - point2[1], point3[2] - point2[2]
  
-    # Find the dotProduct of lines AB-> & BC->
-    dotProduct = (ABx * BCx + ABy * BCy + ABz * BCz)
+#     # Find the dotProduct of lines AB-> & BC->
+#     dotProduct = (ABx * BCx + ABy * BCy + ABz * BCz)
  
-    # Find magnitude of line AB-> and BC->
-    magnitudeAB = (ABx * ABx + ABy * ABy + ABz * ABz)
-    magnitudeBC = (BCx * BCx + BCy * BCy + BCz * BCz)
+#     # Find magnitude of line AB-> and BC->
+#     magnitudeAB = (ABx * ABx + ABy * ABy + ABz * ABz)
+#     magnitudeBC = (BCx * BCx + BCy * BCy + BCz * BCz)
  
-    # Find the cosine of the angle formed by line AB-> and BC->
-    angle = dotProduct / math.sqrt(magnitudeAB * magnitudeBC)
+#     # Find the cosine of the angle formed by line AB-> and BC->
+#     angle = dotProduct / math.sqrt(magnitudeAB * magnitudeBC)
  
-    # Find angle in radian
-    angle = (angle * 180) / 3.14
+#     # Find angle in radian
+#     angle = (angle * 180) / 3.14
  
-    return round(abs(angle), 4)
+#     return round(abs(angle), 4)
+
+
+def calculateAngle(point_1, point_2, point_3):
+
+    a = math.sqrt((point_2[0]-point_3[0])**2 + (point_2[1]-point_3[1])**2 + (point_2[2]-point_3[2])**2)
+    b = math.sqrt((point_1[0]-point_3[0])**2 + (point_1[1]-point_3[1])**2 + (point_1[2]-point_3[2])**2)
+    c = math.sqrt((point_1[0]-point_2[0])**2 + (point_1[1]-point_2[1])**2 + (point_1[2]-point_2[2])**2)
+
+    if (-2*a*c) == 0:
+        B = math.degrees(math.acos((b*b-a*a-c*c)/(-2*a*c+1)))
+    elif ((b*b-a*a-c*c) / (-2*a*c)) >= 1 or ((b*b-a*a-c*c) / (-2*a*c)) <= -1:
+        B = math.degrees(math.acos(1))
+    else:
+        B = math.degrees(round(math.acos((b*b-a*a-c*c)/(-2*a*c)),3))
+
+    return B
 
 
 def load_subject_strokes_keypoints(subject, annot_df):
@@ -177,11 +193,11 @@ def subject_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_f
     alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{TIMESTAMP}/{feature_name}_similarity_{TIMESTAMP[:-1]}")
     # plt.show()
     
-    subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), np.random.randint(0, max_y+1, size=1000),
+    subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), np.random.randint(min_y, max_y+1, size=1000),
         keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
 
     similarity = (subject_distance / (max_distance - min_distance)) * 100
-    similarity = max((100 - similarity), 0)
+    similarity = min(max((100 - similarity), 0), 100)
 
     print(f"Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {min_distance}")
 
