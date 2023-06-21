@@ -180,8 +180,8 @@ def subject_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_f
     s1_y_curve = CubicSpline(s1_x_line, s1_feature, bc_type='natural')
 
     s2_x_line = np.arange(0, len(s2_time), 1)
-    s2_x_curve = CubicSpline(np.arange(0, len(s2_time), 1), s2_time, bc_type='natural')
-    s2_y_curve = CubicSpline(np.arange(0, len(s2_time), 1), s2_feature, bc_type='natural')
+    s2_x_curve = CubicSpline(s2_x_line, s2_time, bc_type='natural')
+    s2_y_curve = CubicSpline(s2_x_line, s2_feature, bc_type='natural')
 
     alignment_threeway = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)),
         keep_internals=True)
