@@ -1,0 +1,6 @@
+<stroke_speed>
+Old similarity: 100
+Euclidean similarity: 98.5709603654932
+Pearson Correlation similarity: 39.86926515723594
+DTW similarity: 68.0585854989563
+similarity: 53.963925328096124

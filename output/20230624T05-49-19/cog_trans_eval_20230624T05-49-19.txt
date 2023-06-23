@@ -1,0 +1,6 @@
+<cog_trans>
+Old similarity: 100
+Euclidean similarity: 97.99951953436509
+Pearson Correlation similarity: 21.229715593986764
+DTW similarity: 37.09939837571707
+similarity: 29.16455698485192

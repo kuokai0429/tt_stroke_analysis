@@ -19,6 +19,7 @@ from tqdm import tqdm
 import math
 from dtw import *
 from scipy.interpolate import CubicSpline
+from sklearn.preprocessing import MinMaxScaler
 
 
 def init_seed(seed):
@@ -81,8 +82,8 @@ def get_curves(s1_time, s2_time, s1_feature, s2_feature):
     s2_x_curve = CubicSpline(s2_xlim, s2_time, bc_type='natural')
     s2_y_curve = CubicSpline(s2_xlim, s2_feature, bc_type='natural')
 
-    max_x, min_x = max(max(s1_time), max(s2_time)),  min(max(s1_time), max(s2_time))
-    max_y, min_y = max(max(s1_feature), max(s2_feature)),  min(max(s1_feature), max(s2_feature))
+    max_x, min_x = max(max(s1_time), max(s2_time)),  min(min(s1_time), min(s2_time))
+    max_y, min_y = max(max(s1_feature), max(s2_feature)),  min(min(s1_feature), min(s2_feature))
 
     return s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y
 
@@ -138,7 +139,7 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
 
     s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
 
-    factor = max_x / min_x
+    factor = max_x / min(max(s1_time), max(s2_time))
     factor_s1, factor_s2 = (1, factor) if max(s1_time) > max(s2_time) else (factor, 1)
 
     f = plt.figure()
@@ -163,7 +164,7 @@ def euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2
     s1, s2 = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000))
     
     subject_distance = np.sqrt(np.sum((s1 - s2) ** 2))
-    max_distance = np.sqrt(np.sum((s1 - np.random.randint(min_y, max_y+1, size=1000)) ** 2))
+    max_distance = np.sqrt(np.sum((s1 - np.random.uniform(min_y, max_y, size=1000)) ** 2))
     min_distance = 0
 
     similarity = (subject_distance / (max_distance - min_distance)) * 100
@@ -183,11 +184,11 @@ def pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, 
     p_diff = s2 - np.mean(s2)
     numerator = np.sum(a_diff * p_diff)
     denominator = np.sqrt(np.sum(a_diff ** 2)) * np.sqrt(np.sum(p_diff ** 2))
-    subject_corr = abs(numerator / denominator)
+    subject_corr = numerator / denominator
 
     # print(f"Subject_Correlation: {subject_corr}")
 
-    return subject_corr
+    return max(subject_corr, 0) * 100
 
 
 def dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
@@ -208,7 +209,7 @@ def dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{TIMESTAMP}/{feature_name}_similarity_{TIMESTAMP[:-1]}")
     # plt.show()
     
-    subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), np.random.randint(min_y, max_y+1, size=1000),
+    subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), np.random.uniform(min_y, max_y, size=1000),
         keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
     similarity = (subject_distance / (max_distance - min_distance)) * 100
     similarity = min(max((100 - similarity), 0), 100)
@@ -237,19 +238,43 @@ def meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_f
     return similarity
 
 
-def similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang):
+def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
 
-    old_similarity = meanStd_similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
-    euclidean_similarity = euclidean_similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
-    pearsonCorr_similarity = pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
-    dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
-    similarity = 0.5 * 100 * pearsonCorr_similarity + 0.5 * dtw_similarity
+    scaler = MinMaxScaler()
+    scaler.fit(np.concatenate((s1_feature, s2_feature), axis=0).reshape(-1, 1))
+    s1_feature_scaled = scaler.transform(s1_feature.reshape(-1, 1))
+    s2_feature_scaled = scaler.transform(s2_feature.reshape(-1, 1))
+    s1_feature, s2_feature = s1_feature_scaled, s2_feature_scaled
+    print(s1_feature_scaled.shape, s2_feature_scaled.shape)
+
+    old_similarity = meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+    euclidean_similarity = euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+    pearsonCorr_similarity = pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+    dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+
+    if pearsonCorr_similarity > 60 and dtw_similarity < 20:
+        similarity = 0.8 * pearsonCorr_similarity + 0.2 * dtw_similarity
+    elif pearsonCorr_similarity < 10 and dtw_similarity > 60:
+        similarity = 0.1 * pearsonCorr_similarity + 0.9 * dtw_similarity + 10
+    elif 50 < pearsonCorr_similarity < 80 and 50 < dtw_similarity < 80:
+        similarity = 0.5 * pearsonCorr_similarity + 0.5 * dtw_similarity + 10
+    else:
+        similarity = 0.5 * pearsonCorr_similarity + 0.5 * dtw_similarity
     
     print("Old similarity: ", old_similarity)
     print('Euclidean similarity:', euclidean_similarity)
     print('Pearson Correlation similarity', pearsonCorr_similarity)
     print('DTW similarity:', dtw_similarity)
     print('similarity:', similarity, end="\n\n")
+
+    with open(f'output/{TIMESTAMP}/{feature_name}_eval_{TIMESTAMP[:-1]}.txt', 'w') as f:
+        
+        f.writelines(f'<{feature_name}>\n')
+        f.writelines(f'Old similarity: {old_similarity}\n')
+        f.writelines(f'Euclidean similarity: {euclidean_similarity}\n')
+        f.writelines(f'Pearson Correlation similarity: {pearsonCorr_similarity}\n')
+        f.writelines(f'DTW similarity: {dtw_similarity}\n')
+        f.writelines(f'similarity: {similarity}\n')
 
     return similarity
 
@@ -343,10 +368,10 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
     s1_strokes_cog = np.array([(f[h36m_skeleton["spine"]] + f[h36m_skeleton["hip"]]) / 2 for f in s1_strokes_kp])
     s2_strokes_cog = np.array([(f[h36m_skeleton["spine"]] + f[h36m_skeleton["hip"]]) / 2 for f in s2_strokes_kp])
 
-    s1_cog_trans = [(distance(s1_strokes_cog[i], s1_strokes_cog[i-1]) / ((i/s1_video_fps) - ((i-1)/s1_video_fps)))
-                     for i in range(1, len(s1_strokes_kp))]
-    s2_cog_trans = [(distance(s2_strokes_cog[i], s2_strokes_cog[i-1]) / ((i/s2_video_fps) - ((i-1)/s2_video_fps)))
-                     for i in range(1, len(s2_strokes_kp))]
+    s1_cog_trans = np.array([(distance(s1_strokes_cog[i], s1_strokes_cog[i-1]) / ((i/s1_video_fps) - ((i-1)/s1_video_fps)))
+                     for i in range(1, len(s1_strokes_kp))])
+    s2_cog_trans = np.array([(distance(s2_strokes_cog[i], s2_strokes_cog[i-1]) / ((i/s2_video_fps) - ((i-1)/s2_video_fps)))
+                     for i in range(1, len(s2_strokes_kp))])
     
     s1_time = [(i / s1_video_fps) for i in range(1, len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(1, len(s2_strokes_kp))]  
@@ -372,10 +397,10 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_
     s1_strokes_wrist = np.array([f[h36m_skeleton["r_wrist"]] for f in s1_strokes_kp])
     s2_strokes_wrist = np.array([f[h36m_skeleton["r_wrist"]] for f in s2_strokes_kp])
 
-    s1_strokes_speed = [(distance(s1_strokes_wrist[i], s1_strokes_wrist[i-1]) / ((i/s1_video_fps) - ((i-1)/s1_video_fps)))
-                     for i in range(1, len(s1_strokes_kp))]
-    s2_strokes_speed = [(distance(s2_strokes_wrist[i], s2_strokes_wrist[i-1]) / ((i/s2_video_fps) - ((i-1)/s2_video_fps)))
-                     for i in range(1, len(s2_strokes_kp))]
+    s1_strokes_speed = np.array([(distance(s1_strokes_wrist[i], s1_strokes_wrist[i-1]) / ((i/s1_video_fps) - ((i-1)/s1_video_fps)))
+                     for i in range(1, len(s1_strokes_kp))])
+    s2_strokes_speed = np.array([(distance(s2_strokes_wrist[i], s2_strokes_wrist[i-1]) / ((i/s2_video_fps) - ((i-1)/s2_video_fps)))
+                     for i in range(1, len(s2_strokes_kp))])
     
     s1_time = [(i / s1_video_fps) for i in range(1, len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(1, len(s2_strokes_kp))]  
@@ -449,3 +474,15 @@ if __name__ == "__main__":
 
     # 5. Evaluate Speed of stroke
     strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+
+
+    ## Export the Analysis Results
+
+    with open(f'output/{TIMESTAMP}/evalAll_{TIMESTAMP[:-1]}.txt', 'w') as f:
+        
+        f.writelines(f'{args.subject1} & {args.subject2}\n')
+        f.writelines(f'arm_ang_similarity: {arm_ang_similarity}\n')
+        f.writelines(f'knee_ang_similarity: {knee_ang_similarity}\n')
+        f.writelines(f'hip_rot_ang_similarity: {hip_rot_ang_similarity}\n')
+        f.writelines(f'cog_trans_similarity: {cog_trans_similarity}\n')
+        f.writelines(f'strokes_speed_similarity: {strokes_speed_similarity}\n')
