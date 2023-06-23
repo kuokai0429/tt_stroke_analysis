@@ -28,50 +28,6 @@ def init_seed(seed):
     np.random.seed(seed)
 
 
-def distance(point_1, point_2):
-
-    length = math.sqrt((point_1[0]-point_2[0])**2 + (point_1[1]-point_2[1])**2 + (point_1[2]-point_2[2])**2)
-    return length
-
-
-# def calculateAngle(point1, point2, point3):
-                        
-#     # Find direction vector of line AB-> & BC->
-#     ABx, ABy, ABz = point1[0] - point2[0], point1[1] - point2[1], point1[2] - point2[2]
-#     BCx, BCy, BCz = point3[0] - point2[0], point3[1] - point2[1], point3[2] - point2[2]
- 
-#     # Find the dotProduct of lines AB-> & BC->
-#     dotProduct = (ABx * BCx + ABy * BCy + ABz * BCz)
- 
-#     # Find magnitude of line AB-> and BC->
-#     magnitudeAB = (ABx * ABx + ABy * ABy + ABz * ABz)
-#     magnitudeBC = (BCx * BCx + BCy * BCy + BCz * BCz)
- 
-#     # Find the cosine of the angle formed by line AB-> and BC->
-#     angle = dotProduct / math.sqrt(magnitudeAB * magnitudeBC)
- 
-#     # Find angle in radian
-#     angle = (angle * 180) / 3.14
- 
-#     return round(abs(angle), 4)
-
-
-def calculateAngle(point_1, point_2, point_3):
-
-    a = math.sqrt((point_2[0]-point_3[0])**2 + (point_2[1]-point_3[1])**2 + (point_2[2]-point_3[2])**2)
-    b = math.sqrt((point_1[0]-point_3[0])**2 + (point_1[1]-point_3[1])**2 + (point_1[2]-point_3[2])**2)
-    c = math.sqrt((point_1[0]-point_2[0])**2 + (point_1[1]-point_2[1])**2 + (point_1[2]-point_2[2])**2)
-
-    if (-2*a*c) == 0:
-        B = math.degrees(math.acos((b*b-a*a-c*c)/(-2*a*c+1)))
-    elif ((b*b-a*a-c*c) / (-2*a*c)) >= 1 or ((b*b-a*a-c*c) / (-2*a*c)) <= -1:
-        B = math.degrees(math.acos(1))
-    else:
-        B = math.degrees(round(math.acos((b*b-a*a-c*c)/(-2*a*c)),3))
-
-    return B
-
-
 def load_subject_strokes_keypoints(subject, annot_df):
 
     subject_annot = annot_df.loc[annot_df['subject'] == subject]
@@ -88,6 +44,47 @@ def load_subject_strokes_keypoints(subject, annot_df):
     subject_video_fps = cv2.VideoCapture(subject_video_filepath).get(cv2.CAP_PROP_FPS)
 
     return subject_strokes_kp, subject_video_fps
+
+
+def distance(point_1, point_2):
+
+    length = math.sqrt((point_1[0]-point_2[0])**2 + (point_1[1]-point_2[1])**2 + (point_1[2]-point_2[2])**2)
+    return length
+
+
+def calculateAngle(point_1, point_2, point_3):
+
+    a = math.sqrt((point_2[0]-point_3[0])**2 + (point_2[1]-point_3[1])**2 + (point_2[2]-point_3[2])**2)
+    b = math.sqrt((point_1[0]-point_3[0])**2 + (point_1[1]-point_3[1])**2 + (point_1[2]-point_3[2])**2)
+    c = math.sqrt((point_1[0]-point_2[0])**2 + (point_1[1]-point_2[1])**2 + (point_1[2]-point_2[2])**2)
+
+    if (-2*a*c) == 0:
+        B = math.degrees(math.acos((b*b-a*a-c*c) / (-2*a*c+1)))
+    elif ((b*b-a*a-c*c) / (-2*a*c)) >= 1 or ((b*b-a*a-c*c) / (-2*a*c)) <= -1:
+        B = math.degrees(math.acos(1))
+    else:
+        B = math.degrees(round(math.acos((b*b-a*a-c*c) / (-2*a*c)), 3))
+
+    return B
+
+
+def get_curves(s1_time, s2_time, s1_feature, s2_feature):
+    '''
+    Get the interpolated curves of the original data.
+    '''
+
+    s1_xlim = np.arange(0, len(s1_time), 1)
+    s1_x_curve = CubicSpline(s1_xlim, s1_time, bc_type='natural')
+    s1_y_curve = CubicSpline(s1_xlim, s1_feature, bc_type='natural')
+
+    s2_xlim = np.arange(0, len(s2_time), 1)
+    s2_x_curve = CubicSpline(s2_xlim, s2_time, bc_type='natural')
+    s2_y_curve = CubicSpline(s2_xlim, s2_feature, bc_type='natural')
+
+    max_x, min_x = max(max(s1_time), max(s2_time)),  min(max(s1_time), max(s2_time))
+    max_y, min_y = max(max(s1_feature), max(s2_feature)),  min(max(s1_feature), max(s2_feature))
+
+    return s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y
 
 
 def plot_subject_seperate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_feature, s2_feature):
@@ -139,22 +136,14 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
 
     ## Plot Subjects together with 1d-rescale
 
-    s1_x_line = np.arange(0, len(s1_time), 1)
-    s1_x_curve = CubicSpline(s1_x_line, s1_time, bc_type='natural')
-    s1_y_curve = CubicSpline(s1_x_line, s1_feature, bc_type='natural')
+    s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
 
-    s2_x_line = np.arange(0, len(s2_time), 1)
-    s2_x_curve = CubicSpline(np.arange(0, len(s2_time), 1), s2_time, bc_type='natural')
-    s2_y_curve = CubicSpline(np.arange(0, len(s2_time), 1), s2_feature, bc_type='natural')
-
-    max_x, min_x = max(max(s1_time), max(s2_time)),  min(max(s1_time), max(s2_time))
-    max_y, min_y = max(max(s1_feature), max(s2_feature)),  min(max(s1_feature), max(s2_feature))
     factor = max_x / min_x
     factor_s1, factor_s2 = (1, factor) if max(s1_time) > max(s2_time) else (factor, 1)
 
     f = plt.figure()
-    plt.plot(factor_s1 * s1_x_curve(s1_x_line), s1_y_curve(s1_x_line), label=args.subject1)
-    plt.plot(factor_s2 * s2_x_curve(s2_x_line), s2_y_curve(s2_x_line), label=args.subject2)
+    plt.plot(factor_s1 * s1_x_curve(s1_xlim), s1_y_curve(s1_xlim), label=args.subject1)
+    plt.plot(factor_s2 * s2_x_curve(s2_xlim), s2_y_curve(s2_xlim), label=args.subject2)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend()
@@ -165,46 +154,109 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
     plt.close(f)
 
 
-def subject_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
+def euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
+    '''
+    https://tech.gorilla.co/how-can-we-quantify-similarity-between-time-series-ed1d0b633ca0
+    '''
+
+    s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
+    s1, s2 = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000))
+    
+    subject_distance = np.sqrt(np.sum((s1 - s2) ** 2))
+    max_distance = np.sqrt(np.sum((s1 - np.random.randint(min_y, max_y+1, size=1000)) ** 2))
+    min_distance = 0
+
+    similarity = (subject_distance / (max_distance - min_distance)) * 100
+    similarity = min(max((100 - similarity), 0), 100)
+
+    print(f"<Euclidean> Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {min_distance}")
+
+    return similarity
+
+
+def pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
+
+    s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
+    s1, s2 = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000))
+
+    a_diff = s1 - np.mean(s1)
+    p_diff = s2 - np.mean(s2)
+    numerator = np.sum(a_diff * p_diff)
+    denominator = np.sqrt(np.sum(a_diff ** 2)) * np.sqrt(np.sum(p_diff ** 2))
+    subject_corr = abs(numerator / denominator)
+
+    # print(f"Subject_Correlation: {subject_corr}")
+
+    return subject_corr
+
+
+def dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     '''
     In time series analysis, dynamic time warping (DTW) is an algorithm for measuring similarity between 
     two temporal sequences, which may vary in speed. 
     (https://dynamictimewarping.github.io/python/)
     '''
 
-    max_x, min_x = max(max(s1_time), max(s2_time)),  min(max(s1_time), max(s2_time))
-    max_y, min_y = max(max(s1_feature), max(s2_feature)),  min(max(s1_feature), max(s2_feature))
-
-    s1_x_line = np.arange(0, len(s1_time), 1)
-    s1_x_curve = CubicSpline(s1_x_line, s1_time, bc_type='natural')
-    s1_y_curve = CubicSpline(s1_x_line, s1_feature, bc_type='natural')
-
-    s2_x_line = np.arange(0, len(s2_time), 1)
-    s2_x_curve = CubicSpline(s2_x_line, s2_time, bc_type='natural')
-    s2_y_curve = CubicSpline(s2_x_line, s2_feature, bc_type='natural')
+    s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
 
     alignment_threeway = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)),
-        keep_internals=True)
-    
+        keep_internals=True)    
     alignment_twoway = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)),
         keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c"))
-    
+      
     alignment_threeway.plot(type="threeway")
     alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{TIMESTAMP}/{feature_name}_similarity_{TIMESTAMP[:-1]}")
     # plt.show()
     
     subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), np.random.randint(min_y, max_y+1, size=1000),
         keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
-
     similarity = (subject_distance / (max_distance - min_distance)) * 100
     similarity = min(max((100 - similarity), 0), 100)
 
-    print(f"Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {min_distance}")
+    print(f"<DTW> Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {min_distance}")
 
     return similarity
 
 
-def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
+def meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
+
+    mean_standard, mean_learner = np.mean(s1_feature), np.mean(s2_feature)
+    std_standard, std_learner  = np.std(s1_feature, ddof=0), np.std(s2_feature, ddof=1)
+
+    if mean_learner < 160:
+        mean = max((1 - (abs(mean_learner-mean_standard) / 180)) * 30, 0)
+        std  = max((1 - (abs(std_learner-std_standard) / std_standard)) * 0, 0)
+        bonus = 70
+    else:
+        mean = max((1 - (abs(mean_learner-mean_standard) / 180)) * 20, 0)
+        std  = min(max((1 - (abs(std_learner-std_standard) / std_standard)) * 80, 0), 50)
+        bonus = 0
+        
+    similarity = int(round(mean + std + bonus))
+
+    return similarity
+
+
+def similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang):
+
+    old_similarity = meanStd_similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
+    euclidean_similarity = euclidean_similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
+    pearsonCorr_similarity = pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
+    dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
+    similarity = 0.5 * 100 * pearsonCorr_similarity + 0.5 * dtw_similarity
+    
+    print("Old similarity: ", old_similarity)
+    print('Euclidean similarity:', euclidean_similarity)
+    print('Pearson Correlation similarity', pearsonCorr_similarity)
+    print('DTW similarity:', dtw_similarity)
+    print('similarity:', similarity, end="\n\n")
+
+    return similarity
+
+
+def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps):
+
+    print("Arm bending angle >>>>>")
 
     ## Calculate Subject Arm Bending Angles
 
@@ -224,13 +276,14 @@ def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp):
 
     ## Calculate Subject Arm Bending Angles Similarities (https://dynamictimewarping.github.io/python/)
 
-    similarity = subject_similarity_function('arm_ang', s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
-    print('Arm bending angle similarity:', similarity, end="\n\n")
+    similarity = similarity_function('arm_ang', s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
 
     return similarity
 
 
-def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
+def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps):
+
+    print("Knee bending angle >>>>>")
 
     ## Calculate Subject Knee Bending Angles
 
@@ -251,13 +304,14 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp):
 
     ## Calculate Subject Knee Bending Angles Similarities (https://dynamictimewarping.github.io/python/)
 
-    similarity = subject_similarity_function('knee_ang', s1_time, s2_time, s1_strokes_knee_ang, s2_strokes_knee_ang)
-    print('Knee bending angle similarity:', similarity, end="\n\n")
+    similarity = similarity_function('knee_ang', s1_time, s2_time, s1_strokes_knee_ang, s2_strokes_knee_ang)
 
     return similarity
 
 
-def evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, pose_frontfacing_degree):
+def evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, pose_frontfacing_degree):
+
+    print("Hip Joint relative Angle >>>>>")
 
     ## Calculate Subject Hip Joint relative Angle
 
@@ -275,13 +329,14 @@ def evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, pose_frontfacing_degree):
 
     ## Calculate Subject Hip Joint relative Angles Similarities (https://dynamictimewarping.github.io/python/)
 
-    similarity = subject_similarity_function('hip_rot_ang', s1_time, s2_time, s1_strokes_hip_rot_ang, s2_strokes_hip_rot_ang)
-    print('Hip Joint relative Angle similarity:', similarity, end="\n\n")
+    similarity = similarity_function('hip_rot_ang', s1_time, s2_time, s1_strokes_hip_rot_ang, s2_strokes_hip_rot_ang)
 
     return similarity
 
 
-def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
+def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps):
+
+    print("Center of Gravity Transition >>>>>")
 
     ## Calculate Subject Center of Gravity Transitions
 
@@ -303,13 +358,14 @@ def evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp):
 
     ## Calculate Subject Center of Gravity Transitions Similarities (https://dynamictimewarping.github.io/python/)
 
-    similarity = subject_similarity_function('cog_trans', s1_time, s2_time, s1_cog_trans, s2_cog_trans)
-    print('Center of Gravity Transition similarity:', similarity, end="\n\n")
+    similarity = similarity_function('cog_trans', s1_time, s2_time, s1_cog_trans, s2_cog_trans)
 
     return similarity
 
 
-def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
+def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps):
+
+    print("Stroke Speed >>>>>")
 
     ## Calculate Subject Stroke Speed
 
@@ -331,8 +387,7 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp):
 
     ## Calculate Subject Stroke Speed Similarities (https://dynamictimewarping.github.io/python/)
 
-    similarity = subject_similarity_function('stroke_speed', s1_time, s2_time, s1_strokes_speed, s2_strokes_speed)
-    print('Stroke Speed similarity: ', similarity, end="\n\n")
+    similarity = similarity_function('stroke_speed', s1_time, s2_time, s1_strokes_speed, s2_strokes_speed)
 
     return similarity
 
@@ -381,16 +436,16 @@ if __name__ == "__main__":
     os.makedirs(f'output/{TIMESTAMP}')
 
     # 1. Evaluate Arm bending angle
-    arm_ang_similarity = evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp)
+    arm_ang_similarity = evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
     # 2. Evaluate Knee bending angle
-    knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp)
+    knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
     # 3. Evaluate Hip joint rotation angle
-    hip_rot_ang_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, 180)
+    hip_rot_ang_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 180)
 
     # 4. Evaluate Center of gravity transitions
-    cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp)
+    cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
     # 5. Evaluate Speed of stroke
-    strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp)
+    strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
