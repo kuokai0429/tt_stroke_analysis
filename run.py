@@ -161,10 +161,10 @@ def euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2
     '''
 
     s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
-    s1, s2 = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000))
-    
+    s1, s2, s_max = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)), np.random.uniform(min_y, max_y, size=1000).reshape(-1, 1)
+
     subject_distance = np.sqrt(np.sum((s1 - s2) ** 2))
-    max_distance = np.sqrt(np.sum((s1 - np.random.uniform(min_y, max_y, size=1000)) ** 2))
+    max_distance = np.sqrt(np.sum((s1 - s_max) ** 2))
     min_distance = 0
 
     similarity = (subject_distance / (max_distance - min_distance)) * 100
@@ -199,18 +199,15 @@ def dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     '''
 
     s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
+    s1, s2, s_max = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)), np.random.uniform(min_y, max_y, size=1000).reshape(-1, 1)
 
-    alignment_threeway = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)),
-        keep_internals=True)    
-    alignment_twoway = dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)),
-        keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c"))
-      
+    alignment_threeway = dtw(s1, s2, keep_internals=True)    
+    alignment_twoway = dtw(s1, s2, keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c"))
     alignment_threeway.plot(type="threeway")
     alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{TIMESTAMP}/{feature_name}_similarity_{TIMESTAMP[:-1]}")
     # plt.show()
     
-    subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1_y_curve(np.linspace(0, len(s1_time), 1000)), np.random.uniform(min_y, max_y, size=1000),
-        keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
+    subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1, s_max, keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
     similarity = (subject_distance / (max_distance - min_distance)) * 100
     similarity = min(max((100 - similarity), 0), 100)
 
