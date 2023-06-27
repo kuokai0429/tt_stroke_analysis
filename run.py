@@ -29,7 +29,7 @@ def init_seed(seed):
     np.random.seed(seed)
 
 
-def load_subject_strokes_keypoints(subject, annot_df):
+def load_subject_keypoints(subject, annot_df):
 
     subject_annot = annot_df.loc[annot_df['subject'] == subject]
 
@@ -37,14 +37,14 @@ def load_subject_strokes_keypoints(subject, annot_df):
     assert os.path.exists(subject_kp_filepath), f"Subject {subject} 3D keypoints file doesn't exist!"
 
     subject_keypoints = np.load(subject_kp_filepath, encoding='latin1', allow_pickle=True)["reconstruction"]
-    subject_strokes_kp = subject_keypoints[int(subject_annot['start']):int(subject_annot['end'])]
+    subject_trimmed_kp = subject_keypoints[int(subject_annot['start']):int(subject_annot['end'])]
 
-    print(subject_strokes_kp.shape)
+    print(subject_trimmed_kp.shape)
 
     subject_video_filepath = f"input/{subject}.mp4"
     subject_video_fps = cv2.VideoCapture(subject_video_filepath).get(cv2.CAP_PROP_FPS)
 
-    return subject_strokes_kp, subject_video_fps
+    return subject_trimmed_kp, subject_video_fps
 
 
 def distance(point_1, point_2):
@@ -448,8 +448,8 @@ if __name__ == "__main__":
         "r_hip": 1, "r_knee": 2, "r_foot": 3, "l_hip": 4, "l_knee": 5, "l_foot": 6
         }
     
-    s1_strokes_kp, s1_video_fps = load_subject_strokes_keypoints(args.subject1, annot_df)
-    s2_strokes_kp, s2_video_fps = load_subject_strokes_keypoints(args.subject2, annot_df)
+    s1_strokes_kp, s1_video_fps = load_subject_keypoints(args.subject1, annot_df)
+    s2_strokes_kp, s2_video_fps = load_subject_keypoints(args.subject2, annot_df)
     print()
 
 
