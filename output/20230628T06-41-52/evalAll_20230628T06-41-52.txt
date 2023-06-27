@@ -1,0 +1,7 @@
+nchu_m7_left & other_f1_left
+arm_wave_ang_similarity : 100
+arm_bend_ang_similarity : 0
+knee_ang_similarity: 83.47979951655012
+hip_rot_ang_similarity: 91.58364188603481
+cog_trans_similarity: 35.80943005006735
+strokes_speed_similarity: 81.27442303494811

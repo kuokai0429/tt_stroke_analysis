@@ -1,0 +1,5 @@
+<benchmark_valueoffset>
+Euclidean similarity: 58.436059638914564
+Pearson Correlation similarity: 100.0
+DTW similarity: 58.324075378787775
+Proposed similarity: 88.33518492424244

@@ -1,0 +1,5 @@
+<hip_rot_ang>
+Euclidean similarity: 37.321589546916755
+Pearson Correlation similarity: 76.89282294875518
+DTW similarity: 33.373349982705165
+Proposed similarity: 87.54087565215019

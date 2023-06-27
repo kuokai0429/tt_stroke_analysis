@@ -1,0 +1,5 @@
+<knee_ang>
+Euclidean similarity: 0
+Pearson Correlation similarity: 0
+DTW similarity: 0
+Proposed similarity: 0

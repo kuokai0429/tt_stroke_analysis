@@ -1,6 +1,0 @@
-<hip_rot_ang>
-Old similarity: 100
-Euclidean similarity: 0
-Pearson Correlation similarity: 0
-DTW similarity: 0
-similarity: 0.0

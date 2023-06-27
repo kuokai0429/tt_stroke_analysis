@@ -90,6 +90,8 @@ def get_curves(s1_time, s2_time, s1_feature, s2_feature):
 
 def plot_subject_seperate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_feature, s2_feature):
 
+    s2_label = args.subject1 if args.mode == "benchmark" else args.subject2
+
     f = plt.figure()
     plt.xlim([min(min(s1_time), min(s2_time)), max(max(s1_time), max(s2_time))])
     plt.ylim([min(min(s1_feature), min(s2_feature)), max(max(s1_feature), max(s2_feature))])
@@ -107,7 +109,7 @@ def plot_subject_seperate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_fea
     f = plt.figure()
     plt.xlim([min(min(s1_time), min(s2_time)), max(max(s1_time), max(s2_time))])
     plt.ylim([min(min(s1_feature), min(s2_feature)), max(max(s1_feature), max(s2_feature))])
-    plt.plot(s2_time, s2_feature, label=args.subject2)
+    plt.plot(s2_time, s2_feature, label=s2_label)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend()
@@ -123,11 +125,13 @@ def plot_subject_seperate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_fea
 
 def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_feature, s2_feature):
 
+    s2_label = args.subject1 if args.mode == "benchmark" else args.subject2
+
     ## Plot Subjects together without 1d-rescale
     
     # f = plt.figure()
     # plt.plot(s1_time, s1_feature, label=args.subject1)
-    # plt.plot(s2_time, s2_feature, label=args.subject2)
+    # plt.plot(s2_time, s2_feature, label=s2_label)
     # plt.xlabel(xlabel)
     # plt.ylabel(ylabel)
     # plt.legend()
@@ -144,7 +148,7 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
 
     f = plt.figure()
     plt.plot(factor_s1 * s1_x_curve(s1_xlim), s1_y_curve(s1_xlim), label=args.subject1)
-    plt.plot(factor_s2 * s2_x_curve(s2_xlim), s2_y_curve(s2_xlim), label=args.subject2)
+    plt.plot(factor_s2 * s2_x_curve(s2_xlim), s2_y_curve(s2_xlim), label=s2_label)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend()
@@ -188,7 +192,7 @@ def pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, 
 
     # print(f"Subject_Correlation: {subject_corr}")
 
-    return max(subject_corr, 0) * 100
+    return min(max(subject_corr, 0) * 100, 100)
 
 
 def dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
@@ -249,31 +253,39 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     pearsonCorr_similarity = pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
 
-    if 60 < pearsonCorr_similarity and dtw_similarity < 20:
-        similarity = 0.8 * pearsonCorr_similarity + 0.2 * dtw_similarity
-    elif pearsonCorr_similarity < 10 and 70 < dtw_similarity < 90:
-        similarity = 0.1 * pearsonCorr_similarity + 0.9 * dtw_similarity + 20
-    elif 50 < pearsonCorr_similarity < 80 and 50 < dtw_similarity < 80:
-        similarity = 0.5 * pearsonCorr_similarity + 0.5 * dtw_similarity + 10
-    elif (80 < pearsonCorr_similarity and 50 < dtw_similarity < 80) or (50 < pearsonCorr_similarity < 80 and 80 < dtw_similarity):
-        similarity = 0.5 * pearsonCorr_similarity + 0.5 * dtw_similarity + 15
+    if pearsonCorr_similarity == 100 and dtw_similarity == 100:
+        similarity = 100
+    elif pearsonCorr_similarity == 100 and dtw_similarity != 100:
+        similarity = pearsonCorr_similarity - 0.2 * dtw_similarity
+    elif pearsonCorr_similarity != 100 and dtw_similarity == 100:
+        similarity = dtw_similarity - 0.2 * pearsonCorr_similarity
+    elif 60 < pearsonCorr_similarity < 80 and 50 < dtw_similarity < 70:
+        similarity = 0.6 * pearsonCorr_similarity + 0.4 * dtw_similarity + 15
+    elif 60 < pearsonCorr_similarity < 80 and dtw_similarity < 50:
+        similarity = 0.9 * pearsonCorr_similarity + 0.1 * dtw_similarity + 15
+    elif 60 < pearsonCorr_similarity < 80 and 70 < dtw_similarity:
+        similarity = 0.1 * pearsonCorr_similarity + 0.9 * dtw_similarity + 10
+    elif pearsonCorr_similarity < 60 and 50 < dtw_similarity < 70:
+        similarity = 0.4 * pearsonCorr_similarity + 0.6 * dtw_similarity + 25
+    elif 80 < pearsonCorr_similarity and 50 < dtw_similarity < 70:
+        similarity = 0.9 * pearsonCorr_similarity + 0.1 * dtw_similarity + 10
     else:
-        similarity = 0.5 * pearsonCorr_similarity + 0.5 * dtw_similarity
+        similarity = max(pearsonCorr_similarity, dtw_similarity)
+
+    similarity = min(similarity, 100)
     
-    print("Old similarity: ", old_similarity)
     print('Euclidean similarity:', euclidean_similarity)
     print('Pearson Correlation similarity', pearsonCorr_similarity)
     print('DTW similarity:', dtw_similarity)
-    print('similarity:', similarity, end="\n\n")
+    print('Proposed similarity:', similarity, end="\n\n")
 
     with open(f'output/{TIMESTAMP}/{feature_name}_eval_{TIMESTAMP[:-1]}.txt', 'w') as f:
         
         f.writelines(f'<{feature_name}>\n')
-        f.writelines(f'Old similarity: {old_similarity}\n')
         f.writelines(f'Euclidean similarity: {euclidean_similarity}\n')
         f.writelines(f'Pearson Correlation similarity: {pearsonCorr_similarity}\n')
         f.writelines(f'DTW similarity: {dtw_similarity}\n')
-        f.writelines(f'similarity: {similarity}\n')
+        f.writelines(f'Proposed similarity: {similarity}\n')
 
     return similarity
 
@@ -284,12 +296,12 @@ def evaluate_arm_wave_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_f
 
     ## Configuring a Vector that points out from Front Body (Suppose the 3D Pose was facing right)
 
-    vz, vx, vy = 0, np.cos(degree * np.pi / 180), np.sin(degree * np.pi / 180)
+    vx, vy, vz = np.cos(degree * np.pi / 180), np.sin(degree * np.pi / 180), 0
 
     ## Calculate Subject Arm Waving Angles
 
     s1_strokes_arm_wave_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_strokes_kp])
-    s2_strokes_arm_wave_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]]  + (vx, vy, vz), f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s2_strokes_kp])
+    s2_strokes_arm_wave_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s2_strokes_kp])
 
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
@@ -364,7 +376,7 @@ def evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fp
 
     ## Configuring a Vector that points out from Front Body (Suppose the 3D Pose was facing right)
 
-    vz, vx, vy = 0, np.cos(degree * np.pi / 180), np.sin(degree * np.pi / 180)
+    vx, vy, vz = np.cos(degree * np.pi / 180), np.sin(degree * np.pi / 180), 0
 
     ## Calculate Subject Hip Joint relative Angle
 
@@ -444,9 +456,59 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_
     return similarity
 
 
-def benchmark_comparison(s1_strokes_kp , s1_video_fps):
+def benchmark_comparison(s1_kp , s1_video_fps):
 
-    return None
+    print("Benchmark Comparison Between Similarity Functions:", end="\n")
+
+    # Configurations
+    degree, time_offset, value_offset, scale_value, noise_range, wrapped_time = 0, 10, 20, 1.5, 8, 20
+    vx, vy, vz  = np.cos(degree * np.pi / 180), np.sin(degree * np.pi / 180), 0
+
+    # Original
+    print("Original----------------")
+    s1_feature_original = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
+                                                   f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-time_offset]])
+    s1_time_original = [(i / s1_video_fps) for i in range(len(s1_kp[:-time_offset]))]
+    plot_subject_concatenate('benchmark_original', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_original)
+    similarity = similarity_function('benchmark_original', s1_time_original, s1_time_original, s1_feature_original, s1_feature_original)
+    
+    # Time Offset
+    print("Time Offset----------------")
+    s1_feature_timeoffset = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
+                                                     f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[time_offset:]])
+    s1_time_timeoffset = [(i / s1_video_fps) for i in range(len(s1_kp[time_offset:]))]
+    plot_subject_concatenate('benchmark_timeoffset', 'sec', 'degree', s1_time_original, s1_time_timeoffset, s1_feature_original, s1_feature_timeoffset)
+    similarity = similarity_function('benchmark_timeoffset', s1_time_original, s1_time_timeoffset, s1_feature_original, s1_feature_timeoffset)
+    
+    # Value Offset
+    print("Value Offset----------------")
+    s1_feature_valueoffset = np.array([value_offset + calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
+                                                                     f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-time_offset]])
+    plot_subject_concatenate('benchmark_valueoffset', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_valueoffset)
+    similarity = similarity_function('benchmark_valueoffset', s1_time_original, s1_time_original, s1_feature_original, s1_feature_valueoffset)
+    
+    # Scaled
+    print("Scaled----------------")
+    s1_feature_scaled = np.array([scale_value * calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
+                                                               f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-time_offset]])
+    plot_subject_concatenate('benchmark_scaled', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_scaled)
+    similarity = similarity_function('benchmark_scaled', s1_time_original, s1_time_original, s1_feature_original, s1_feature_scaled)
+    
+    # Noise
+    print("Noise----------------")
+    s1_feature_noise = np.random.normal(-noise_range,noise_range,len(s1_kp[:-time_offset])) + np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
+                        f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-time_offset]])
+    plot_subject_concatenate('benchmark_noise', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_noise)
+    similarity = similarity_function('benchmark_noise', s1_time_original, s1_time_original, s1_feature_original, s1_feature_noise)
+    
+    # Time Wrapped
+    print("Time Wrapped----------------")
+    s1_feature_wrapped = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
+                                                  f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-(time_offset+wrapped_time)]])
+    s1_time_wrapped = [(i / s1_video_fps) for i in range(len(s1_kp[:-(time_offset+wrapped_time)]))]
+    plot_subject_concatenate('benchmark_wrapped', 'sec', 'degree', s1_time_original, s1_time_wrapped, s1_feature_original, s1_feature_wrapped)
+    similarity = similarity_function('benchmark_wrapped', s1_time_original, s1_time_wrapped, s1_feature_original, s1_feature_wrapped)
+    
 
 
 # Define Configurations
@@ -457,73 +519,75 @@ TIMESTAMP = "{0:%Y%m%dT%H-%M-%S/}".format(datetime.now())
 # Argument Parser
 parser = argparse.ArgumentParser(description='main')
 parser.add_argument('--subject1', required=True, type=str, help="Subject 1 3D filename.")
-parser.add_argument('--subject2', required=True, type=str, help="Subject 2 3D filename.")
-args = parser.parse_args()
+parser.add_argument('--mode', required=True, type=str, help="Mode.")
+args = parser.parse_known_args()[0]
 
 
 if __name__ == "__main__":
 
-    ## Set up random seed on everything
-
     init_seed(SEED)
-
-
-    ## Load Annotation file
-
-    subjects_annot_filepath = f"annotation/stroke_analysis.csv"
-    assert os.path.exists(subjects_annot_filepath), "Subjects annotation file doesn't exist!"
-    annot_df = pd.read_csv(subjects_annot_filepath, encoding='utf8')
-
-
-    ## Load subject strokes keypoints and Get subject video information
 
     h36m_skeleton = {
         "head": 10, "neck": 9, "throat": 8, "spine": 7, "hip": 0,
         "r_shoulder": 14, "r_elbow": 15, "r_wrist": 16, "l_shoulder": 11, "l_elbow": 12, "l_wrist": 13,
         "r_hip": 1, "r_knee": 2, "r_foot": 3, "l_hip": 4, "l_knee": 5, "l_foot": 6
         }
-    
-    s1_strokes_kp, s1_video_fps = load_subject_keypoints(args.subject1, annot_df)
-    s2_strokes_kp, s2_video_fps = load_subject_keypoints(args.subject2, annot_df)
-    print()
+
+    subjects_annot_filepath = f"annotation/stroke_analysis.csv"
+    assert os.path.exists(subjects_annot_filepath), "Subjects annotation file doesn't exist!"
+    annot_df = pd.read_csv(subjects_annot_filepath, encoding='utf8')
+
+    os.makedirs(f'output/{TIMESTAMP}')
 
 
     ## Stroke Analysis 
 
-    os.makedirs(f'output/{TIMESTAMP}')
+    if args.mode == "analysis":
 
-    # 1. Evaluate Arm waving angle
-    arm_wave_ang_similarity = evaluate_arm_wave_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
+        parser.add_argument('--subject2', required=True, type=str, help="Subject 2 3D filename.")
+        args = parser.parse_args()
 
-    # 2. Evaluate Arm bending angle
-    arm_bend_ang_similarity = evaluate_arm_bend_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
-
-    # 3. Evaluate Knee bending angle
-    knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
-
-    # 4. Evaluate Hip joint rotating angle
-    hip_rot_ang_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
-
-    # 5. Evaluate Center of gravity transitions
-    cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
-
-    # 6. Evaluate Speed of stroke
-    strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
-
-
-    ## Export the Analysis Results
-
-    with open(f'output/{TIMESTAMP}/evalAll_{TIMESTAMP[:-1]}.txt', 'w') as f:
+        # 0. Load subject strokes keypoints and Get subject video information
         
-        f.writelines(f'{args.subject1} & {args.subject2}\n')
-        f.writelines(f'arm_wave_ang_similarity : {arm_wave_ang_similarity }\n')
-        f.writelines(f'arm_bend_ang_similarity : {arm_bend_ang_similarity }\n')
-        f.writelines(f'knee_ang_similarity: {knee_ang_similarity}\n')
-        f.writelines(f'hip_rot_ang_similarity: {hip_rot_ang_similarity}\n')
-        f.writelines(f'cog_trans_similarity: {cog_trans_similarity}\n')
-        f.writelines(f'strokes_speed_similarity: {strokes_speed_similarity}\n')
+        s1_strokes_kp, s1_video_fps = load_subject_keypoints(args.subject1, annot_df)
+        s2_strokes_kp, s2_video_fps = load_subject_keypoints(args.subject2, annot_df)
+        print()
+
+        # 1. Evaluate Arm waving angle
+        arm_wave_ang_similarity = evaluate_arm_wave_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
+
+        # 2. Evaluate Arm bending angle
+        arm_bend_ang_similarity = evaluate_arm_bend_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+
+        # 3. Evaluate Knee bending angle
+        knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+
+        # 4. Evaluate Hip joint rotating angle
+        hip_rot_ang_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
+
+        # 5. Evaluate Center of gravity transitions
+        cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+
+        # 6. Evaluate Speed of stroke
+        strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
 
+        ## Export the Analysis Results
+
+        with open(f'output/{TIMESTAMP}/evalAll_{TIMESTAMP[:-1]}.txt', 'w') as f:
+            
+            f.writelines(f'{args.subject1} & {args.subject2}\n')
+            f.writelines(f'arm_wave_ang_similarity : {arm_wave_ang_similarity }\n')
+            f.writelines(f'arm_bend_ang_similarity : {arm_bend_ang_similarity }\n')
+            f.writelines(f'knee_ang_similarity: {knee_ang_similarity}\n')
+            f.writelines(f'hip_rot_ang_similarity: {hip_rot_ang_similarity}\n')
+            f.writelines(f'cog_trans_similarity: {cog_trans_similarity}\n')
+            f.writelines(f'strokes_speed_similarity: {strokes_speed_similarity}\n')
+
+    
     ## Benchmark Comparison Between Similarity Functions
+    
+    elif args.mode == "benchmark":
 
-    benchmark_comparison(s1_strokes_kp, s1_video_fps)
+        s1_strokes_kp, s1_video_fps = load_subject_keypoints(args.subject1, annot_df)
+        benchmark_comparison(s1_strokes_kp, s1_video_fps)

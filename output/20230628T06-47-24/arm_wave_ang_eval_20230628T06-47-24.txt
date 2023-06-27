@@ -1,0 +1,5 @@
+<arm_wave_ang>
+Euclidean similarity: 46.09132662891069
+Pearson Correlation similarity: 83.88076458428024
+DTW similarity: 51.88974317008237
+Proposed similarity: 90.68166244286046
