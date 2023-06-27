@@ -249,12 +249,14 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     pearsonCorr_similarity = pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
 
-    if pearsonCorr_similarity > 60 and dtw_similarity < 20:
+    if 60 < pearsonCorr_similarity and dtw_similarity < 20:
         similarity = 0.8 * pearsonCorr_similarity + 0.2 * dtw_similarity
-    elif pearsonCorr_similarity < 10 and dtw_similarity > 60:
-        similarity = 0.1 * pearsonCorr_similarity + 0.9 * dtw_similarity + 10
+    elif pearsonCorr_similarity < 10 and 70 < dtw_similarity < 90:
+        similarity = 0.1 * pearsonCorr_similarity + 0.9 * dtw_similarity + 20
     elif 50 < pearsonCorr_similarity < 80 and 50 < dtw_similarity < 80:
         similarity = 0.5 * pearsonCorr_similarity + 0.5 * dtw_similarity + 10
+    elif (80 < pearsonCorr_similarity and 50 < dtw_similarity < 80) or (50 < pearsonCorr_similarity < 80 and 80 < dtw_similarity):
+        similarity = 0.5 * pearsonCorr_similarity + 0.5 * dtw_similarity + 15
     else:
         similarity = 0.5 * pearsonCorr_similarity + 0.5 * dtw_similarity
     
@@ -276,29 +278,54 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     return similarity
 
 
-def evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps):
+def evaluate_arm_wave_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, degree):
+
+    print("Arm Waving Angles >>>>>")
+
+    ## Configuring a Vector that points out from Front Body (Suppose the 3D Pose was facing right)
+
+    vz, vx, vy = 0, np.cos(degree * np.pi / 180), np.sin(degree * np.pi / 180)
+
+    ## Calculate Subject Arm Waving Angles
+
+    s1_strokes_arm_wave_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_strokes_kp])
+    s2_strokes_arm_wave_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]]  + (vx, vy, vz), f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s2_strokes_kp])
+
+    s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
+    s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
+
+    ## Plot Subjects Arm Waving Angles
+    
+    plot_subject_seperate('arm_wave_ang', 'sec', 'degree', s1_time, s2_time, s1_strokes_arm_wave_ang, s2_strokes_arm_wave_ang)
+    plot_subject_concatenate('arm_wave_ang', 'sec', 'degree', s1_time, s2_time, s1_strokes_arm_wave_ang, s2_strokes_arm_wave_ang)
+
+    ## Calculate Subject Arm Waving Angles Similarities (https://dynamictimewarping.github.io/python/)
+
+    similarity = similarity_function('arm_wave_ang', s1_time, s2_time, s1_strokes_arm_wave_ang, s2_strokes_arm_wave_ang)
+
+    return similarity
+
+
+def evaluate_arm_bend_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps):
 
     print("Arm bending angle >>>>>")
 
     ## Calculate Subject Arm Bending Angles
 
-    # s1_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s1_strokes_kp])
-    # s2_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s2_strokes_kp])
-
-    s1_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["throat"]], f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_strokes_kp])
-    s2_strokes_arm_ang = np.array([calculateAngle(f[h36m_skeleton["throat"]], f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s2_strokes_kp])
+    s1_strokes_arm_bend_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s1_strokes_kp])
+    s2_strokes_arm_bend_ang = np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]], f[h36m_skeleton["r_wrist"]]) for f in s2_strokes_kp])
 
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]  
 
     ## Plot Subjects Arm Bending Angles
     
-    plot_subject_seperate('arm_ang', 'sec', 'degree', s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
-    plot_subject_concatenate('arm_ang', 'sec', 'degree', s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
+    plot_subject_seperate('arm_bend_ang', 'sec', 'degree', s1_time, s2_time, s1_strokes_arm_bend_ang, s2_strokes_arm_bend_ang)
+    plot_subject_concatenate('arm_bend_ang', 'sec', 'degree', s1_time, s2_time, s1_strokes_arm_bend_ang, s2_strokes_arm_bend_ang)
 
     ## Calculate Subject Arm Bending Angles Similarities (https://dynamictimewarping.github.io/python/)
 
-    similarity = similarity_function('arm_ang', s1_time, s2_time, s1_strokes_arm_ang, s2_strokes_arm_ang)
+    similarity = similarity_function('arm_bend_ang', s1_time, s2_time, s1_strokes_arm_bend_ang, s2_strokes_arm_bend_ang)
 
     return similarity
 
@@ -331,15 +358,18 @@ def evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps):
     return similarity
 
 
-def evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, pose_frontfacing_degree):
+def evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, degree):
 
     print("Hip Joint relative Angle >>>>>")
 
+    ## Configuring a Vector that points out from Front Body (Suppose the 3D Pose was facing right)
+
+    vz, vx, vy = 0, np.cos(degree * np.pi / 180), np.sin(degree * np.pi / 180)
+
     ## Calculate Subject Hip Joint relative Angle
 
-    vz, vx, vy = 0, np.cos(pose_frontfacing_degree * np.pi / 180), np.sin(pose_frontfacing_degree * np.pi / 180)
-    s1_strokes_hip_rot_ang = np.array([calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_hip"]] + (vz, vx, vy)) for f in s1_strokes_kp])
-    s2_strokes_hip_rot_ang = np.array([calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_hip"]] + (vz, vx, vy)) for f in s2_strokes_kp])
+    s1_strokes_hip_rot_ang = np.array([calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_hip"]] + (vx, vy, vz)) for f in s1_strokes_kp])
+    s2_strokes_hip_rot_ang = np.array([calculateAngle(f[h36m_skeleton["r_hip"]], f[h36m_skeleton["l_hip"]], f[h36m_skeleton["l_hip"]] + (vx, vy, vz)) for f in s2_strokes_kp])
     
     s1_time = [(i / s1_video_fps) for i in range(len(s1_strokes_kp))]
     s2_time = [(i / s2_video_fps) for i in range(len(s2_strokes_kp))]   
@@ -414,6 +444,11 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_
     return similarity
 
 
+def benchmark_comparison(s1_strokes_kp , s1_video_fps):
+
+    return None
+
+
 # Define Configurations
 SEED = 0
 SOURCE_FOLDER = "input\\"
@@ -457,19 +492,22 @@ if __name__ == "__main__":
 
     os.makedirs(f'output/{TIMESTAMP}')
 
-    # 1. Evaluate Arm bending angle
-    arm_ang_similarity = evaluate_arm_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+    # 1. Evaluate Arm waving angle
+    arm_wave_ang_similarity = evaluate_arm_wave_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
 
-    # 2. Evaluate Knee bending angle
+    # 2. Evaluate Arm bending angle
+    arm_bend_ang_similarity = evaluate_arm_bend_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+
+    # 3. Evaluate Knee bending angle
     knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
-    # 3. Evaluate Hip joint rotation angle
-    hip_rot_ang_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 180)
+    # 4. Evaluate Hip joint rotating angle
+    hip_rot_ang_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
 
-    # 4. Evaluate Center of gravity transitions
+    # 5. Evaluate Center of gravity transitions
     cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
-    # 5. Evaluate Speed of stroke
+    # 6. Evaluate Speed of stroke
     strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
 
@@ -478,8 +516,14 @@ if __name__ == "__main__":
     with open(f'output/{TIMESTAMP}/evalAll_{TIMESTAMP[:-1]}.txt', 'w') as f:
         
         f.writelines(f'{args.subject1} & {args.subject2}\n')
-        f.writelines(f'arm_ang_similarity: {arm_ang_similarity}\n')
+        f.writelines(f'arm_wave_ang_similarity : {arm_wave_ang_similarity }\n')
+        f.writelines(f'arm_bend_ang_similarity : {arm_bend_ang_similarity }\n')
         f.writelines(f'knee_ang_similarity: {knee_ang_similarity}\n')
         f.writelines(f'hip_rot_ang_similarity: {hip_rot_ang_similarity}\n')
         f.writelines(f'cog_trans_similarity: {cog_trans_similarity}\n')
         f.writelines(f'strokes_speed_similarity: {strokes_speed_similarity}\n')
+
+
+    ## Benchmark Comparison Between Similarity Functions
+
+    benchmark_comparison(s1_strokes_kp, s1_video_fps)

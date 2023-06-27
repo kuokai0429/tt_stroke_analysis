@@ -1,6 +1,0 @@
-<knee_ang>
-Old similarity: 100
-Euclidean similarity: 10.432511600549446
-Pearson Correlation similarity: 68.1973110367386
-DTW similarity: 0
-similarity: 54.55784882939088
