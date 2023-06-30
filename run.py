@@ -163,13 +163,13 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
 def plot_trajectory(ts, t, ax, color_code=None, alpha=.1):
     
     if color_code is not None:
-        color = [color_code] * len(ts)
+        colors = [color_code] * len(ts)
     else:
         # colors = plt.cm.jet(np.linspace(0, 1, len(ts)))
-        color = plt.cm.jet(0)
+        colors = plt.cm.jet(5)
     for i in range(len(ts) - 1):
         ax.plot(ts[i:i+2], t[i:i+2],
-                marker='o', c=color, alpha=alpha)
+                marker='o', c=colors, alpha=alpha)
 
 
 def euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
@@ -270,22 +270,22 @@ def ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     plt.figure(figsize=(8, 4))
     ax = plt.subplot(1, 2, 1)
     for (i, j) in path_dtw:
-        ax.plot([s1[i], s2[j]],
-                [np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
+        ax.plot([np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
+                [s1[i], s2[j]],
                 color='g' if i == j else 'r', alpha=.5)
-    plot_trajectory(s1, np.arange(0, 1000), ax)
-    plot_trajectory(s2, np.arange(0, 1000), ax)
+    plot_trajectory(np.arange(0, 1000), s1, ax)
+    plot_trajectory(np.arange(0, 1000), s2, ax)
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_title("DTW")
 
     ax = plt.subplot(1, 2, 2)
     for (i, j) in path_ctw:
-        ax.plot([s1[i], s2[j]],
-                [np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
+        ax.plot([np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
+                [s1[i], s2[j]],
                 color='g' if i == j else 'r', alpha=.5)
-    plot_trajectory(s1, np.arange(0, 1000), ax)
-    plot_trajectory(s2, np.arange(0, 1000), ax)
+    plot_trajectory(np.arange(0, 1000), s1, ax)
+    plot_trajectory(np.arange(0, 1000), s2, ax)
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_title("CTW")
