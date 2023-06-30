@@ -18,6 +18,7 @@ import pandas as pd
 from tqdm import tqdm
 import math
 from dtw import *
+from tslearn.metrics import dtw_path, ctw_path, ctw
 from scipy.interpolate import CubicSpline
 from sklearn.preprocessing import MinMaxScaler
 
@@ -159,6 +160,18 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
     plt.close(f)
 
 
+def plot_trajectory(ts, t, ax, color_code=None, alpha=.1):
+    
+    if color_code is not None:
+        color = [color_code] * len(ts)
+    else:
+        # colors = plt.cm.jet(np.linspace(0, 1, len(ts)))
+        color = plt.cm.jet(0)
+    for i in range(len(ts) - 1):
+        ax.plot(ts[i:i+2], t[i:i+2],
+                marker='o', c=color, alpha=alpha)
+
+
 def euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     '''
     https://tech.gorilla.co/how-can-we-quantify-similarity-between-time-series-ed1d0b633ca0
@@ -206,7 +219,7 @@ def dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     s1, s2, s_max = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)), np.random.uniform(min_y, max_y, size=1000).reshape(-1, 1)
 
     alignment_threeway = dtw(s1, s2, keep_internals=True)    
-    alignment_twoway = dtw(s1, s2, keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c"))
+    alignment_twoway = dtw(s1, s2, keep_internals=True, open_begin=True, open_end=True, step_pattern=rabinerJuangStepPattern(6, "c"))
     alignment_threeway.plot(type="threeway")
     alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{TIMESTAMP}/{feature_name}_similarity_{TIMESTAMP[:-1]}")
     # plt.show()
@@ -239,6 +252,56 @@ def meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_f
     return similarity
 
 
+def ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
+    '''
+    Canonical Time Warping is a method to align time series under rigid registration 
+    of the feature space. It should not be confused with Dynamic Time Warping (DTW), though CTW uses DTW.
+    https://tslearn.readthedocs.io/en/stable/gen_modules/metrics/tslearn.metrics.ctw.html
+    '''
+
+    s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
+    s1, s2, s_max = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)), np.random.uniform(min_y, max_y, size=1000).reshape(-1, 1)
+
+    path_dtw, _ = dtw_path(s1, s2)
+    path_ctw, cca, _ = ctw_path(s1, s2, max_iter=100, n_components=1)
+    # ctw_distance = ctw(s1, s2, max_iter=100, n_components=1)
+    print(len(path_dtw), len(path_ctw))
+
+    plt.figure(figsize=(8, 4))
+    ax = plt.subplot(1, 2, 1)
+    for (i, j) in path_dtw:
+        ax.plot([s1[i], s2[j]],
+                [np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
+                color='g' if i == j else 'r', alpha=.5)
+    plot_trajectory(s1, np.arange(0, 1000), ax)
+    plot_trajectory(s2, np.arange(0, 1000), ax)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("DTW")
+
+    ax = plt.subplot(1, 2, 2)
+    for (i, j) in path_ctw:
+        ax.plot([s1[i], s2[j]],
+                [np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
+                color='g' if i == j else 'r', alpha=.5)
+    plot_trajectory(s1, np.arange(0, 1000), ax)
+    plot_trajectory(s2, np.arange(0, 1000), ax)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title("CTW")
+
+    plt.tight_layout()
+    plt.show()
+    
+    # subject_distance, min_distance, max_distance = , 0, 
+    # similarity = (subject_distance / (max_distance - min_distance)) * 100
+    # similarity = min(max((100 - similarity), 0), 100)
+
+    # print(f"<CTW> Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {min_distance}")
+
+    # return similarity
+
+
 def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
 
     scaler = MinMaxScaler()
@@ -252,12 +315,13 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     euclidean_similarity = euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     pearsonCorr_similarity = pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+    ctw_similarity = ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
 
-    if pearsonCorr_similarity == 100 and dtw_similarity == 100:
+    if 99 <= pearsonCorr_similarity and 99 <= dtw_similarity:
         similarity = 100
-    elif pearsonCorr_similarity == 100 and dtw_similarity != 100:
+    elif 99 <= pearsonCorr_similarity and dtw_similarity < 99:
         similarity = pearsonCorr_similarity - 0.2 * dtw_similarity
-    elif pearsonCorr_similarity != 100 and dtw_similarity == 100:
+    elif pearsonCorr_similarity < 99 and 99 <= dtw_similarity:
         similarity = dtw_similarity - 0.2 * pearsonCorr_similarity
     elif 60 < pearsonCorr_similarity < 80 and 50 < dtw_similarity < 70:
         similarity = 0.6 * pearsonCorr_similarity + 0.4 * dtw_similarity + 15
@@ -277,6 +341,7 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     print('Euclidean similarity:', euclidean_similarity)
     print('Pearson Correlation similarity', pearsonCorr_similarity)
     print('DTW similarity:', dtw_similarity)
+    print('CTW similarity:', ctw_similarity)
     print('Proposed similarity:', similarity, end="\n\n")
 
     with open(f'output/{TIMESTAMP}/{feature_name}_eval_{TIMESTAMP[:-1]}.txt', 'w') as f:
@@ -285,6 +350,7 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
         f.writelines(f'Euclidean similarity: {euclidean_similarity}\n')
         f.writelines(f'Pearson Correlation similarity: {pearsonCorr_similarity}\n')
         f.writelines(f'DTW similarity: {dtw_similarity}\n')
+        f.writelines(f'CTW similarity: {ctw_similarity}\n')
         f.writelines(f'Proposed similarity: {similarity}\n')
 
     return similarity
