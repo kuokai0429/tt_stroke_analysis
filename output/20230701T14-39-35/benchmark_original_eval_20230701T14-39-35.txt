@@ -1,0 +1,7 @@
+<benchmark_original>
+Euclidean similarity: 100.0
+Pearson Correlation similarity: 100
+DTW similarity: 99.99651151513152
+CTW similarity: 100.0
+LCSS similarity: 0.0
+Proposed similarity: 100

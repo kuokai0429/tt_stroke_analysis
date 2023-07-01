@@ -18,7 +18,8 @@ import pandas as pd
 from tqdm import tqdm
 import math
 from dtw import *
-from tslearn.metrics import dtw_path, ctw_path, ctw
+from tslearn.metrics import dtw_path, dtw_subsequence_path, ctw_path, lcss_path
+from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 from scipy.interpolate import CubicSpline
 from sklearn.preprocessing import MinMaxScaler
 
@@ -139,6 +140,7 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
     # plt.show()
     
     # f.savefig(f"./output/{TIMESTAMP}/{feature_name}_{TIMESTAMP[:-1]}")
+    # plt.close(f)
 
     ## Plot Subjects together with 1d-rescale
 
@@ -156,8 +158,27 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
     # plt.show()
 
     f.savefig(f"./output/{TIMESTAMP[:-1]}/{feature_name}_{TIMESTAMP[:-1]}")
-
     plt.close(f)
+
+
+def plot_alignment(s1, s2, path, feature_name, mode):
+
+    fig = plt.figure(figsize=(8, 8))
+
+    plt.title(f"Time series matching with {mode}")
+    plt.plot(s1, "b-", label='First time series')
+    plt.plot(s2, "g-", label='Second time series')
+
+    for (i, j) in path:
+        plt.plot([np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
+                [s1[i], s2[j]],
+                color='g' if i == j else 'r', alpha=.1)
+    plt.legend()
+    plt.tight_layout()
+    # plt.show()
+
+    fig.savefig(f"./output/{TIMESTAMP[:-1]}/{feature_name}_{mode}_{TIMESTAMP[:-1]}")
+    plt.close(fig)
 
 
 def plot_trajectory(ts, v, ax, color, alpha=1.):
@@ -167,7 +188,7 @@ def plot_trajectory(ts, v, ax, color, alpha=1.):
         ax.plot(ts[i:i+2], v[i:i+2], c=colors, alpha=alpha)
         
         
-def plot_ctw(s1, s2, path_ctw, feature_name, mode):
+def plot_ctw_alignment(s1, s2, path_ctw, feature_name, mode):
 
     fig, ax = plt.subplots()
 
@@ -180,12 +201,10 @@ def plot_ctw(s1, s2, path_ctw, feature_name, mode):
     ax.set_xticks([])
     ax.set_yticks([])
     ax.set_title(f"CTW_{mode}")
-
     plt.tight_layout()
     # plt.show()
 
     fig.savefig(f"./output/{TIMESTAMP[:-1]}/{feature_name}_{mode}_ctw_{TIMESTAMP[:-1]}")
-
     plt.close(fig)
 
 
@@ -279,12 +298,15 @@ def ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
     s1, s2, s_max = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)), np.random.uniform(min_y, max_y, size=1000).reshape(-1, 1)
 
-    path_ctw, cca, subject_distance = ctw_path(s1, s2, max_iter=100, n_components=1)
-    plot_ctw(s1, s2, path_ctw, feature_name, "subject")
+    # path, dist = dtw_subsequence_path([2., 3.], [1., 2., 2., 3., 4.])
+    # path, dist = dtw_path([1, 2, 3], [1., 2., 2., 3.])
+
+    path_ctw, cca, subject_distance = ctw_path(s1.reshape(-1), s2.reshape(-1), max_iter=100, n_components=1)
+    plot_ctw_alignment(s1.reshape(-1), s2.reshape(-1), path_ctw, feature_name, "subject")
     # print(subject_distance)
 
-    path_ctw, cca, max_distance = ctw_path(s1, s_max, max_iter=100, n_components=1)
-    # plot_ctw(s1, s_max, path_ctw, feature_name, "max")
+    path_ctw, cca, max_distance = ctw_path(s1.reshape(-1), s_max.reshape(-1), max_iter=100, n_components=1)
+    # plot_ctw_alignment(s1.reshape(-1), s_max.reshape(-1), path_ctw, feature_name, "max")
     # print(max_distance)
     
     similarity = (subject_distance / (max_distance - 0)) * 100
@@ -295,8 +317,35 @@ def ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     return similarity
 
 
+def lcss_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
+    '''
+    M. Vlachos, D. Gunopoulos, and G. Kollios. 2002. 'Discovering Similar Multidimensional Trajectories', In Proceedings of 
+    the 18th International Conference on Data Engineering (ICDE 02). IEEE Computer Society, USA, 673.
+    http://alumni.cs.ucr.edu/~mvlachos/pubs/icde02.pdf
+    '''
+
+    s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
+    s1, s2, s_max = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)), np.random.uniform(min_y, max_y, size=1000).reshape(-1, 1)
+
+    path_lcss, subject_distance = lcss_path(s1.reshape(-1), s2.reshape(-1), eps=1.5)
+    plot_alignment(s1.reshape(-1), s2.reshape(-1), path_lcss, feature_name, "lcss_subject")
+    # print(subject_distance)
+
+    path_lcss, max_distance = lcss_path(s1.reshape(-1), s_max.reshape(-1), eps=1.5)
+    plot_alignment(s1.reshape(-1), s_max.reshape(-1), path_lcss, feature_name, "lcss_max")
+    # print(max_distance)
+    
+    similarity = (subject_distance / (max_distance - 0)) * 100
+    similarity = min(max((100 - similarity), 0), 100)
+
+    print(f"<LCSS> Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {0}")
+
+    return similarity
+
+
 def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
 
+    # Rescale the time series with MinMaxScaler()
     scaler = MinMaxScaler()
     scaler.fit(np.concatenate((s1_feature, s2_feature), axis=0).reshape(-1, 1))
     s1_feature_scaled = scaler.transform(s1_feature.reshape(-1, 1))
@@ -304,11 +353,17 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     s1_feature, s2_feature = s1_feature_scaled, s2_feature_scaled
     print(s1_feature_scaled.shape, s2_feature_scaled.shape)
 
+    # Rescale the time series with TimeSeriesScalerMeanVariance()
+    # scaler = TimeSeriesScalerMeanVariance(mu=0., std=pi)  
+    # dataset_scaled_1 = scaler.fit_transform(dataset_1)
+
+    # Evaluate the Similarity of two subjects.
     old_similarity = meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     euclidean_similarity = euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     pearsonCorr_similarity = pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
-    dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     ctw_similarity = ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+    lcss_similarity = lcss_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+    dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
 
     if 99 <= pearsonCorr_similarity and 99 <= dtw_similarity:
         similarity = 100
@@ -335,6 +390,7 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     print('Pearson Correlation similarity', pearsonCorr_similarity)
     print('DTW similarity:', dtw_similarity)
     print('CTW similarity:', ctw_similarity)
+    print('LCSS similarity:', lcss_similarity)
     print('Proposed similarity:', similarity, end="\n\n")
 
     with open(f'output/{TIMESTAMP}/{feature_name}_eval_{TIMESTAMP[:-1]}.txt', 'w') as f:
@@ -344,6 +400,7 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
         f.writelines(f'Pearson Correlation similarity: {pearsonCorr_similarity}\n')
         f.writelines(f'DTW similarity: {dtw_similarity}\n')
         f.writelines(f'CTW similarity: {ctw_similarity}\n')
+        f.writelines(f'LCSS similarity: {lcss_similarity}\n')
         f.writelines(f'Proposed similarity: {similarity}\n')
 
     return similarity
