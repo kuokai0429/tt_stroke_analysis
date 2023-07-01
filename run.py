@@ -155,21 +155,57 @@ def plot_subject_concatenate(feature_name, xlabel, ylabel, s1_time, s2_time, s1_
     plt.legend()
     # plt.show()
 
-    f.savefig(f"./output/{TIMESTAMP}/{feature_name}_{TIMESTAMP[:-1]}")
+    f.savefig(f"./output/{TIMESTAMP[:-1]}/{feature_name}_{TIMESTAMP[:-1]}")
 
     plt.close(f)
 
 
-def plot_trajectory(ts, t, ax, color_code=None, alpha=.1):
-    
-    if color_code is not None:
-        colors = [color_code] * len(ts)
-    else:
-        # colors = plt.cm.jet(np.linspace(0, 1, len(ts)))
-        colors = plt.cm.jet(5)
+def plot_trajectory(ts, v, ax, color, alpha=1.):
+      
+    colors = plt.cm.jet(color)
     for i in range(len(ts) - 1):
-        ax.plot(ts[i:i+2], t[i:i+2],
-                marker='o', c=colors, alpha=alpha)
+        ax.plot(ts[i:i+2], v[i:i+2], c=colors, alpha=alpha)
+        
+        
+def plot_ctw(s1, s2, path_ctw, feature_name, mode):
+
+    fig, ax = plt.subplots()
+
+    for (i, j) in path_ctw:
+        ax.plot([np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
+                [s1[i], s2[j]],
+                color='g' if i == j else 'r', alpha=.1)
+    plot_trajectory(np.arange(0, 1000), s1, ax, 0)
+    plot_trajectory(np.arange(0, 1000), s2, ax, 500)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_title(f"CTW_{mode}")
+
+    plt.tight_layout()
+    # plt.show()
+
+    fig.savefig(f"./output/{TIMESTAMP[:-1]}/{feature_name}_{mode}_ctw_{TIMESTAMP[:-1]}")
+
+    plt.close(fig)
+
+
+def meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
+
+    mean_standard, mean_learner = np.mean(s1_feature), np.mean(s2_feature)
+    std_standard, std_learner  = np.std(s1_feature, ddof=0), np.std(s2_feature, ddof=1)
+
+    if mean_learner < 160:
+        mean = max((1 - (abs(mean_learner-mean_standard) / 180)) * 30, 0)
+        std  = max((1 - (abs(std_learner-std_standard) / std_standard)) * 0, 0)
+        bonus = 70
+    else:
+        mean = max((1 - (abs(mean_learner-mean_standard) / 180)) * 20, 0)
+        std  = min(max((1 - (abs(std_learner-std_standard) / std_standard)) * 80, 0), 50)
+        bonus = 0
+        
+    similarity = int(round(mean + std + bonus))
+
+    return similarity
 
 
 def euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
@@ -221,7 +257,7 @@ def dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     alignment_threeway = dtw(s1, s2, keep_internals=True)    
     alignment_twoway = dtw(s1, s2, keep_internals=True, open_begin=True, open_end=True, step_pattern=rabinerJuangStepPattern(6, "c"))
     alignment_threeway.plot(type="threeway")
-    alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{TIMESTAMP}/{feature_name}_similarity_{TIMESTAMP[:-1]}")
+    alignment_twoway.plot(type="twoway",offset=-2).figure.savefig(f"./output/{TIMESTAMP[:-1]}/{feature_name}_dtw_{TIMESTAMP[:-1]}")
     # plt.show()
     
     subject_distance, min_distance, max_distance = alignment_twoway.distance, 0, dtw(s1, s_max, keep_internals=True, step_pattern=rabinerJuangStepPattern(6, "c")).distance
@@ -229,25 +265,6 @@ def dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     similarity = min(max((100 - similarity), 0), 100)
 
     print(f"<DTW> Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {min_distance}")
-
-    return similarity
-
-
-def meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
-
-    mean_standard, mean_learner = np.mean(s1_feature), np.mean(s2_feature)
-    std_standard, std_learner  = np.std(s1_feature, ddof=0), np.std(s2_feature, ddof=1)
-
-    if mean_learner < 160:
-        mean = max((1 - (abs(mean_learner-mean_standard) / 180)) * 30, 0)
-        std  = max((1 - (abs(std_learner-std_standard) / std_standard)) * 0, 0)
-        bonus = 70
-    else:
-        mean = max((1 - (abs(mean_learner-mean_standard) / 180)) * 20, 0)
-        std  = min(max((1 - (abs(std_learner-std_standard) / std_standard)) * 80, 0), 50)
-        bonus = 0
-        
-    similarity = int(round(mean + std + bonus))
 
     return similarity
 
@@ -262,44 +279,20 @@ def ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_featu
     s1_x_curve, s1_y_curve, s1_xlim, s2_x_curve, s2_y_curve, s2_xlim, max_x, min_x, max_y, min_y = get_curves(s1_time, s2_time, s1_feature, s2_feature)
     s1, s2, s_max = s1_y_curve(np.linspace(0, len(s1_time), 1000)), s2_y_curve(np.linspace(0, len(s2_time), 1000)), np.random.uniform(min_y, max_y, size=1000).reshape(-1, 1)
 
-    path_dtw, _ = dtw_path(s1, s2)
-    path_ctw, cca, _ = ctw_path(s1, s2, max_iter=100, n_components=1)
-    # ctw_distance = ctw(s1, s2, max_iter=100, n_components=1)
-    print(len(path_dtw), len(path_ctw))
+    path_ctw, cca, subject_distance = ctw_path(s1, s2, max_iter=100, n_components=1)
+    plot_ctw(s1, s2, path_ctw, feature_name, "subject")
+    # print(subject_distance)
 
-    plt.figure(figsize=(8, 4))
-    ax = plt.subplot(1, 2, 1)
-    for (i, j) in path_dtw:
-        ax.plot([np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
-                [s1[i], s2[j]],
-                color='g' if i == j else 'r', alpha=.5)
-    plot_trajectory(np.arange(0, 1000), s1, ax)
-    plot_trajectory(np.arange(0, 1000), s2, ax)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title("DTW")
-
-    ax = plt.subplot(1, 2, 2)
-    for (i, j) in path_ctw:
-        ax.plot([np.arange(0, 1000)[i], np.arange(0, 1000)[j]],
-                [s1[i], s2[j]],
-                color='g' if i == j else 'r', alpha=.5)
-    plot_trajectory(np.arange(0, 1000), s1, ax)
-    plot_trajectory(np.arange(0, 1000), s2, ax)
-    ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_title("CTW")
-
-    plt.tight_layout()
-    plt.show()
+    path_ctw, cca, max_distance = ctw_path(s1, s_max, max_iter=100, n_components=1)
+    # plot_ctw(s1, s_max, path_ctw, feature_name, "max")
+    # print(max_distance)
     
-    # subject_distance, min_distance, max_distance = , 0, 
-    # similarity = (subject_distance / (max_distance - min_distance)) * 100
-    # similarity = min(max((100 - similarity), 0), 100)
+    similarity = (subject_distance / (max_distance - 0)) * 100
+    similarity = min(max((100 - similarity), 0), 100)
 
-    # print(f"<CTW> Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {min_distance}")
+    print(f"<CTW> Subject_distance: {subject_distance}, Max_distance: {max_distance}, Min_distance: {0}")
 
-    # return similarity
+    return similarity
 
 
 def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):

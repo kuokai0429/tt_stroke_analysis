@@ -2,4 +2,5 @@
 Euclidean similarity: 100.0
 Pearson Correlation similarity: 100
 DTW similarity: 99.99662501903317
+CTW similarity: 100.0
 Proposed similarity: 100
