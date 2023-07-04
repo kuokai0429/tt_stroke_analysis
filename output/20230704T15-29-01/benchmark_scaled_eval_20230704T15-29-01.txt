@@ -1,5 +1,0 @@
-<benchmark_scaled>
-Euclidean similarity: 68.97882636738962
-Pearson Correlation similarity: 100.0
-DTW similarity: 78.75426762897627
-Proposed similarity: 84.24914647420475

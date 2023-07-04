@@ -683,39 +683,39 @@ def benchmark_comparison_ver2():
 
 def benchmark_comparison_ver3():
 
-    # print("Benchmark Comparison on Sin Curve Time Offset Animation Experiment:", end="\n")
+    print("Benchmark Comparison on Sin Curve Time Offset Animation Experiment:", end="\n")
 
-    # fig = plt.figure()
-    # ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
-    # line1, = ax.plot([], [], lw=3)
-    # line2, = ax.plot([], [], lw=3)
-    # text1 = ax.text(0.2, 1.6, '')
-    # text2 = ax.text(0.2, 1.4, '')
-    # text1.set_fontsize(12)
-    # text2.set_fontsize(12)
+    fig = plt.figure()
+    ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
+    line1, = ax.plot([], [], lw=3)
+    line2, = ax.plot([], [], lw=3)
+    text1 = ax.text(0.2, 1.6, '')
+    text2 = ax.text(0.2, 1.4, '')
+    text1.set_fontsize(12)
+    text2.set_fontsize(12)
 
-    # def init_1():
-    #     x = np.linspace(0, 4, 1000)
-    #     y = np.sin(2 * np.pi * x)
-    #     line1.set_data(x, y)
-    #     line2.set_data([], [])
-    #     return line1,
+    def init_1():
+        x = np.linspace(0, 4, 1000)
+        y = np.sin(2 * np.pi * x)
+        line1.set_data(x, y)
+        line2.set_data([], [])
+        return line1,
 
-    # def animate_1(i):
-    #     x1 = np.linspace(0, 4, 1000)
-    #     y1 = np.sin(2 * np.pi * x1)
-    #     x2 = np.linspace(0, 4, 1000)
-    #     y2 = np.sin(2 * np.pi * (x2 - 0.003 * i))
-    #     line2.set_data(x2, y2)
-    #     similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
-    #     text1.set_text(f"DTW   : {round(dtw_similarity, 2)}")
-    #     text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
-    #     return line2,
+    def animate_1(i):
+        x1 = np.linspace(0, 4, 1000)
+        y1 = np.sin(2 * np.pi * x1)
+        x2 = np.linspace(0, 4, 1000)
+        y2 = np.sin(2 * np.pi * (x2 - 0.003 * i))
+        line2.set_data(x2, y2)
+        similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
+        text1.set_text(f"DTW   : {round(dtw_similarity, 2)}")
+        text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
+        return line2,
 
-    # anim = FuncAnimation(fig, animate_1, init_func=init_1,
-    #                             frames=333, interval=20, blit=True)
-    # anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_timeoffset.gif", writer='imagemagick')
-    # plt.close(fig)
+    anim = FuncAnimation(fig, animate_1, init_func=init_1,
+                                frames=333, interval=20, blit=True)
+    anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_timeoffset.gif", writer='imagemagick')
+    plt.close(fig)
 
 
     print("Benchmark Comparison on Sin Curve Value Offset Animation Experiment:", end="\n")
@@ -788,40 +788,40 @@ def benchmark_comparison_ver3():
     plt.close(fig)
 
 
-    # print("Benchmark Comparison on Sin Curve Time Warped Animation Experiment:", end="\n")
+    print("Benchmark Comparison on Sin Curve Time Warped Animation Experiment:", end="\n")
 
-    # fig = plt.figure()
-    # ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
-    # line1, = ax.plot([], [], lw=3)
-    # line2, = ax.plot([], [], lw=3)
-    # text1 = ax.text(0.2, 1.6, '')
-    # text2 = ax.text(0.2, 1.4, '')
-    # text1.set_fontsize(12)
-    # text2.set_fontsize(12)
+    fig = plt.figure()
+    ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
+    line1, = ax.plot([], [], lw=3)
+    line2, = ax.plot([], [], lw=3)
+    text1 = ax.text(0.2, 1.6, '')
+    text2 = ax.text(0.2, 1.4, '')
+    text1.set_fontsize(12)
+    text2.set_fontsize(12)
 
-    # def init_4():
-    #     x = np.linspace(0, 4, 1000)
-    #     y = np.sin(2 * np.pi * x)
-    #     line1.set_data(x, y)
-    #     line2.set_data([], [])
-    #     return line1,
+    def init_4():
+        x = np.linspace(0, 4, 1000)
+        y = np.sin(2 * np.pi * x)
+        line1.set_data(x, y)
+        line2.set_data([], [])
+        return line1,
 
-    # def animate_4(i):
-    #     x1 = np.linspace(0, 4, 1000)
-    #     y1 = np.sin(2 * np.pi * x1)
-    #     x2 = np.linspace(0, (4 - 0.002 * i), 1000)
-    #     y2 = np.sin(2 * np.pi * (x2))
-    #     x2 = x2 * ( 4 / (4 - 0.002 * i) )
-    #     line2.set_data(x2, y2)
-    #     similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
-    #     text1.set_text(f"DTW   : {round(dtw_similarity, 2)}")
-    #     text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
-    #     return line2,
+    def animate_4(i):
+        x1 = np.linspace(0, 4, 1000)
+        y1 = np.sin(2 * np.pi * x1)
+        x2 = np.linspace(0, (4 - 0.002 * i), 1000)
+        y2 = np.sin(2 * np.pi * (x2))
+        x2 = x2 * ( 4 / (4 - 0.002 * i) )
+        line2.set_data(x2, y2)
+        similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
+        text1.set_text(f"DTW   : {round(dtw_similarity, 2)}")
+        text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
+        return line2,
 
-    # anim = FuncAnimation(fig, animate_4, init_func=init_4,
-    #                             frames=150, interval=20, blit=True)
-    # anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_warped.gif", writer='imagemagick')
-    # plt.close(fig)
+    anim = FuncAnimation(fig, animate_4, init_func=init_4,
+                                frames=150, interval=20, blit=True)
+    anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_warped.gif", writer='imagemagick')
+    plt.close(fig)
 
 
 
