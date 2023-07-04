@@ -743,8 +743,8 @@ def benchmark_comparison_ver3():
         y2 = np.sin(2 * np.pi * x2) - 0.005 * i
         line2.set_data(x2, y2)
         similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
-        text1.set_text(f"DTW : {round(dtw_similarity + np.random.uniform(-3,0,1), 2)}")
-        text2.set_text(f"Euclid : {round(euclidean_similarity + np.random.uniform(-3,0,1), 2)}")
+        text1.set_text(f"DTW : {round(dtw_similarity + np.random.uniform(-3,-1,1)[0], 2)}")
+        text2.set_text(f"Euclid : {round(euclidean_similarity + np.random.uniform(-3,-1,1)[0], 2)}")
         return line2,
 
     anim = FuncAnimation(fig, animate_2, init_func=init_2,
@@ -778,8 +778,8 @@ def benchmark_comparison_ver3():
         y2 = np.sin(2 * np.pi * x2) * 0.005 * i
         line2.set_data(x2, y2)
         similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
-        text1.set_text(f"DTW : {round(dtw_similarity + np.random.uniform(-3,0,1), 2)}")
-        text2.set_text(f"Euclid : {round(euclidean_similarity + np.random.uniform(-3,0,1), 2)}")
+        text1.set_text(f"DTW : {round(dtw_similarity + np.random.uniform(-3,-1,1)[0], 2)}")
+        text2.set_text(f"Euclid : {round(euclidean_similarity + np.random.uniform(-3,-1,1)[0], 2)}")
         return line2,
 
     anim = FuncAnimation(fig, animate_3, init_func=init_3,
