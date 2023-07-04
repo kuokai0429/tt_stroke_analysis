@@ -1,0 +1,5 @@
+<benchmark_valueoffset>
+Euclidean similarity: 0
+Pearson Correlation similarity: 100
+DTW similarity: 0
+Proposed similarity: 100.0

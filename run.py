@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.font_manager import fontManager
+from matplotlib.animation import FuncAnimation
 import cv2
 import seaborn as sns
 import pandas as pd
@@ -361,8 +362,8 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     old_similarity = meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     euclidean_similarity = euclidean_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     pearsonCorr_similarity = pearsonCorr_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
-    ctw_similarity = ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
-    lcss_similarity = lcss_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+    # ctw_similarity = ctw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
+    # lcss_similarity = lcss_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
     dtw_similarity = dtw_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
 
     if 99 <= pearsonCorr_similarity and 99 <= dtw_similarity:
@@ -389,8 +390,8 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     print('Euclidean similarity:', euclidean_similarity)
     print('Pearson Correlation similarity', pearsonCorr_similarity)
     print('DTW similarity:', dtw_similarity)
-    print('CTW similarity:', ctw_similarity)
-    print('LCSS similarity:', lcss_similarity)
+    # print('CTW similarity:', ctw_similarity)
+    # print('LCSS similarity:', lcss_similarity)
     print('Proposed similarity:', similarity, end="\n\n")
 
     with open(f'output/{TIMESTAMP}/{feature_name}_eval_{TIMESTAMP[:-1]}.txt', 'w') as f:
@@ -399,11 +400,11 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
         f.writelines(f'Euclidean similarity: {euclidean_similarity}\n')
         f.writelines(f'Pearson Correlation similarity: {pearsonCorr_similarity}\n')
         f.writelines(f'DTW similarity: {dtw_similarity}\n')
-        f.writelines(f'CTW similarity: {ctw_similarity}\n')
-        f.writelines(f'LCSS similarity: {lcss_similarity}\n')
+        # f.writelines(f'CTW similarity: {ctw_similarity}\n')
+        # f.writelines(f'LCSS similarity: {lcss_similarity}\n')
         f.writelines(f'Proposed similarity: {similarity}\n')
 
-    return similarity
+    return similarity, dtw_similarity, euclidean_similarity
 
 
 def evaluate_arm_wave_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, degree):
@@ -572,9 +573,9 @@ def evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_
     return similarity
 
 
-def benchmark_comparison(s1_kp , s1_video_fps):
+def benchmark_comparison_ver1(s1_kp , s1_video_fps):
 
-    print("Benchmark Comparison Between Similarity Functions:", end="\n")
+    print("Benchmark on Real Data Comparison Between Similarity Functions:", end="\n")
 
     # Configurations
     degree, time_offset, value_offset, scale_value, noise_range, wrapped_time = 0, 10, 20, 1.5, 8, 20
@@ -586,7 +587,7 @@ def benchmark_comparison(s1_kp , s1_video_fps):
                                                    f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-time_offset]])
     s1_time_original = [(i / s1_video_fps) for i in range(len(s1_kp[:-time_offset]))]
     plot_subject_concatenate('benchmark_original', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_original)
-    similarity = similarity_function('benchmark_original', s1_time_original, s1_time_original, s1_feature_original, s1_feature_original)
+    similarity, dtw, euclid = similarity_function('benchmark_original', s1_time_original, s1_time_original, s1_feature_original, s1_feature_original)
     
     # Time Offset
     print("Time Offset----------------")
@@ -594,28 +595,28 @@ def benchmark_comparison(s1_kp , s1_video_fps):
                                                      f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[time_offset:]])
     s1_time_timeoffset = [(i / s1_video_fps) for i in range(len(s1_kp[time_offset:]))]
     plot_subject_concatenate('benchmark_timeoffset', 'sec', 'degree', s1_time_original, s1_time_timeoffset, s1_feature_original, s1_feature_timeoffset)
-    similarity = similarity_function('benchmark_timeoffset', s1_time_original, s1_time_timeoffset, s1_feature_original, s1_feature_timeoffset)
+    similarity, dtw, euclid = similarity_function('benchmark_timeoffset', s1_time_original, s1_time_timeoffset, s1_feature_original, s1_feature_timeoffset)
     
     # Value Offset
     print("Value Offset----------------")
     s1_feature_valueoffset = np.array([value_offset + calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
                                                                      f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-time_offset]])
     plot_subject_concatenate('benchmark_valueoffset', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_valueoffset)
-    similarity = similarity_function('benchmark_valueoffset', s1_time_original, s1_time_original, s1_feature_original, s1_feature_valueoffset)
+    similarity, dtw, euclid = similarity_function('benchmark_valueoffset', s1_time_original, s1_time_original, s1_feature_original, s1_feature_valueoffset)
     
     # Scaled
     print("Scaled----------------")
     s1_feature_scaled = np.array([scale_value * calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
                                                                f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-time_offset]])
     plot_subject_concatenate('benchmark_scaled', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_scaled)
-    similarity = similarity_function('benchmark_scaled', s1_time_original, s1_time_original, s1_feature_original, s1_feature_scaled)
+    similarity, dtw, euclid = similarity_function('benchmark_scaled', s1_time_original, s1_time_original, s1_feature_original, s1_feature_scaled)
     
     # Noise
     print("Noise----------------")
     s1_feature_noise = np.random.normal(-noise_range,noise_range,len(s1_kp[:-time_offset])) + np.array([calculateAngle(f[h36m_skeleton["r_shoulder"]] + (vx, vy, vz), 
                         f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-time_offset]])
     plot_subject_concatenate('benchmark_noise', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_noise)
-    similarity = similarity_function('benchmark_noise', s1_time_original, s1_time_original, s1_feature_original, s1_feature_noise)
+    similarity, dtw, euclid = similarity_function('benchmark_noise', s1_time_original, s1_time_original, s1_feature_original, s1_feature_noise)
     
     # Time Wrapped
     print("Time Wrapped----------------")
@@ -623,8 +624,128 @@ def benchmark_comparison(s1_kp , s1_video_fps):
                                                   f[h36m_skeleton["r_shoulder"]], f[h36m_skeleton["r_elbow"]]) for f in s1_kp[:-(time_offset+wrapped_time)]])
     s1_time_wrapped = [(i / s1_video_fps) for i in range(len(s1_kp[:-(time_offset+wrapped_time)]))]
     plot_subject_concatenate('benchmark_wrapped', 'sec', 'degree', s1_time_original, s1_time_wrapped, s1_feature_original, s1_feature_wrapped)
-    similarity = similarity_function('benchmark_wrapped', s1_time_original, s1_time_wrapped, s1_feature_original, s1_feature_wrapped)
+    similarity, dtw, euclid = similarity_function('benchmark_wrapped', s1_time_original, s1_time_wrapped, s1_feature_original, s1_feature_wrapped)
+
+
+def benchmark_comparison_ver2():
+
+    print("Benchmark on Sin Curve Comparison Between Similarity Functions:", end="\n")
+
+    # Configurations
+    degree, time_offset, value_offset, scale_value, noise_range, wrapped_time = 0, 200, 20, 1.5, 0.2, 100
+    x = np.linspace(0, 5*np.pi, 1000)
+    y = np.sin(x)
+
+    # Original
+    print("Original----------------")
+    s1_feature_original = y[:-time_offset]
+    s1_time_original = [i for i in range(len(x[:-time_offset]))]
+    plot_subject_concatenate('benchmark_original', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_original)
+    similarity, dtw, euclid = similarity_function('benchmark_original', s1_time_original, s1_time_original, s1_feature_original, s1_feature_original)
     
+    # Time Offset
+    print("Time Offset----------------")
+    s1_feature_timeoffset = y[time_offset:]
+    s1_time_timeoffset = [i for i in range(len(x[time_offset:]))]
+    plot_subject_concatenate('benchmark_timeoffset', 'sec', 'degree', s1_time_original, s1_time_timeoffset, s1_feature_original, s1_feature_timeoffset)
+    similarity, dtw, euclid = similarity_function('benchmark_timeoffset', s1_time_original, s1_time_timeoffset, s1_feature_original, s1_feature_timeoffset)
+    
+    # Value Offset
+    print("Value Offset----------------")
+    s1_feature_valueoffset = np.array([value_offset + f for f in y[:-time_offset]])
+    plot_subject_concatenate('benchmark_valueoffset', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_valueoffset)
+    similarity, dtw, euclid = similarity_function('benchmark_valueoffset', s1_time_original, s1_time_original, s1_feature_original, s1_feature_valueoffset)
+    
+    # Scaled
+    print("Scaled----------------")
+    s1_feature_scaled = np.array([scale_value * f for f in y[:-time_offset]])
+    plot_subject_concatenate('benchmark_scaled', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_scaled)
+    similarity, dtw, euclid = similarity_function('benchmark_scaled', s1_time_original, s1_time_original, s1_feature_original, s1_feature_scaled)
+    
+    # Noise
+    print("Noise----------------")
+    s1_feature_noise = np.random.normal(-noise_range,noise_range,len(y[:-time_offset])) + y[:-time_offset]
+    plot_subject_concatenate('benchmark_noise', 'sec', 'degree', s1_time_original, s1_time_original, s1_feature_original, s1_feature_noise)
+    similarity, dtw, euclid = similarity_function('benchmark_noise', s1_time_original, s1_time_original, s1_feature_original, s1_feature_noise)
+    
+    # Time Wrapped
+    print("Time Wrapped----------------")
+    s1_feature_wrapped = y[:-(time_offset+wrapped_time)]
+    s1_time_wrapped = x[:-(time_offset+wrapped_time)]
+    plot_subject_concatenate('benchmark_wrapped', 'sec', 'degree', s1_time_original, s1_time_wrapped, s1_feature_original, s1_feature_wrapped)
+    similarity, dtw, euclid = similarity_function('benchmark_wrapped', s1_time_original, s1_time_wrapped, s1_feature_original, s1_feature_wrapped)
+    
+
+def benchmark_comparison_ver3():
+
+    print("Benchmark Comparison on Sin Curve Time Offset Animation Experiment:", end="\n")
+
+    fig = plt.figure()
+    ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
+    line1, = ax.plot([], [], lw=3)
+    line2, = ax.plot([], [], lw=3)
+    text1 = ax.text(0.2, 1.6, '')
+    text2 = ax.text(0.2, 1.4, '')
+    text1.set_fontsize(12)
+    text2.set_fontsize(12)
+
+    def init():
+        x = np.linspace(0, 4, 1000)
+        y = np.sin(2 * np.pi * x)
+        line1.set_data(x, y)
+        line2.set_data([], [])
+        return line1,
+
+    def animate(i):
+        x1 = np.linspace(0, 4, 1000)
+        y1 = np.sin(2 * np.pi * x1)
+        x2 = np.linspace(0, 4, 1000)
+        y2 = np.sin(2 * np.pi * (x2 - 0.003 * i))
+        line2.set_data(x2, y2)
+        similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
+        text1.set_text(f"DTW    : {round(dtw_similarity, 2)}")
+        text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
+        return line2,
+
+    anim = FuncAnimation(fig, animate, init_func=init,
+                                frames=333, interval=20, blit=True)
+    anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_timeoffset.gif", writer='imagemagick')
+
+
+def benchmark_comparison_ver4():
+
+    print("Benchmark Comparison on Sin Curve Value Offset Animation Experiment:", end="\n")
+
+    fig = plt.figure()
+    ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
+    line1, = ax.plot([], [], lw=3)
+    line2, = ax.plot([], [], lw=3)
+    text1 = ax.text(0.2, 1.6, '')
+    text2 = ax.text(0.2, 1.4, '')
+    text1.set_fontsize(12)
+    text2.set_fontsize(12)
+
+    def init():
+        x = np.linspace(0, 4, 1000)
+        y = np.sin(2 * np.pi * x)
+        line1.set_data(x, y)
+        line2.set_data([], [])
+        return line1,
+
+    def animate(i):
+        x1 = np.linspace(0, 4, 1000)
+        y1 = np.sin(2 * np.pi * x1)
+        x2 = np.linspace(0, 4, 1000)
+        y2 = np.sin(2 * np.pi * (x2 - 0.003 * i))
+        line2.set_data(x2, y2)
+        similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
+        text1.set_text(f"DTW  : {round(dtw_similarity, 2)}")
+        text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
+        return line2,
+
+    anim = FuncAnimation(fig, animate, init_func=init,
+                                frames=333, interval=20, blit=True)
+    anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_timeoffset.gif", writer='imagemagick')
 
 
 # Define Configurations
@@ -670,22 +791,22 @@ if __name__ == "__main__":
         print()
 
         # 1. Evaluate Arm waving angle
-        arm_wave_ang_similarity = evaluate_arm_wave_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
+        arm_wave_ang_similarity, dtw_similarity, euclidean_similarity = evaluate_arm_wave_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
 
         # 2. Evaluate Arm bending angle
-        arm_bend_ang_similarity = evaluate_arm_bend_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+        arm_bend_ang_similarity, dtw_similarity, euclidean_similarity = evaluate_arm_bend_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
         # 3. Evaluate Knee bending angle
-        knee_ang_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+        knee_ang_similarity, dtw_similarity, euclidean_similarity = evaluate_knee_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
         # 4. Evaluate Hip joint rotating angle
-        hip_rot_ang_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
+        hip_rot_ang_similarity, dtw_similarity, euclidean_similarity = evaluate_hip_rot_ang(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps, 0)
 
         # 5. Evaluate Center of gravity transitions
-        cog_trans_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+        cog_trans_similarity, dtw_similarity, euclidean_similarity = evaluate_cog_trans(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
         # 6. Evaluate Speed of stroke
-        strokes_speed_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
+        strokes_speed_similarity, dtw_similarity, euclidean_similarity = evaluate_strokes_speed(s1_strokes_kp, s2_strokes_kp, s1_video_fps, s2_video_fps)
 
 
         ## Export the Analysis Results
@@ -705,5 +826,15 @@ if __name__ == "__main__":
     
     elif args.mode == "benchmark":
 
-        s1_strokes_kp, s1_video_fps = load_subject_keypoints(args.subject1, annot_df)
-        benchmark_comparison(s1_strokes_kp, s1_video_fps)
+        # Benchmark on Real Data
+        # s1_strokes_kp, s1_video_fps = load_subject_keypoints(args.subject1, annot_df)
+        # benchmark_comparison_ver1(s1_strokes_kp, s1_video_fps)
+
+        # Benchmark on Sin Curve
+        # benchmark_comparison_ver2()
+
+        # Benchmark on Sin Curve Time offset Animation Experiment
+        benchmark_comparison_ver3()
+
+        # Benchmark on Sin Curve Value offset Animation Experiment
+        # benchmark_comparison_ver4()
