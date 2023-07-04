@@ -1,0 +1,5 @@
+<benchmark_timeoffset>
+Euclidean similarity: 99.99999999999999
+Pearson Correlation similarity: 100.0
+DTW similarity: 99.99035475901388
+DTW + Corr similarity: 100

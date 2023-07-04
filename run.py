@@ -20,9 +20,8 @@ from tqdm import tqdm
 import math
 from dtw import *
 from tslearn.metrics import dtw_path, dtw_subsequence_path, ctw_path, lcss_path
-from tslearn.preprocessing import TimeSeriesScalerMeanVariance
 from scipy.interpolate import CubicSpline
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 
 def init_seed(seed):
@@ -347,16 +346,22 @@ def lcss_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feat
 def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
 
     # Rescale the time series with MinMaxScaler()
-    scaler = MinMaxScaler()
-    scaler.fit(np.concatenate((s1_feature, s2_feature), axis=0).reshape(-1, 1))
+    # scaler = MinMaxScaler()
+    # scaler.fit(np.concatenate((s1_feature, s2_feature), axis=0).reshape(-1, 1))
+    # s1_feature_scaled = scaler.transform(s1_feature.reshape(-1, 1))
+    # s2_feature_scaled = scaler.transform(s2_feature.reshape(-1, 1))
+    # s1_feature, s2_feature = s1_feature_scaled, s2_feature_scaled
+    # print(s1_feature_scaled.shape, s2_feature_scaled.shape)
+
+    # Rescale the time series with StandardScaler()
+    scaler = StandardScaler()
+    scaler.fit(s1_feature.reshape(-1, 1))
     s1_feature_scaled = scaler.transform(s1_feature.reshape(-1, 1))
+    scaler = StandardScaler()
+    scaler.fit(s2_feature.reshape(-1, 1))
     s2_feature_scaled = scaler.transform(s2_feature.reshape(-1, 1))
     s1_feature, s2_feature = s1_feature_scaled, s2_feature_scaled
     print(s1_feature_scaled.shape, s2_feature_scaled.shape)
-
-    # Rescale the time series with TimeSeriesScalerMeanVariance()
-    # scaler = TimeSeriesScalerMeanVariance(mu=0., std=pi)  
-    # dataset_scaled_1 = scaler.fit_transform(dataset_1)
 
     # Evaluate the Similarity of two subjects.
     old_similarity = meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
@@ -392,7 +397,7 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
     print('DTW similarity:', dtw_similarity)
     # print('CTW similarity:', ctw_similarity)
     # print('LCSS similarity:', lcss_similarity)
-    print('Proposed similarity:', similarity, end="\n\n")
+    print('DTW + Corr similarity:', similarity, end="\n\n")
 
     with open(f'output/{TIMESTAMP}/{feature_name}_eval_{TIMESTAMP[:-1]}.txt', 'w') as f:
         
@@ -402,7 +407,7 @@ def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
         f.writelines(f'DTW similarity: {dtw_similarity}\n')
         # f.writelines(f'CTW similarity: {ctw_similarity}\n')
         # f.writelines(f'LCSS similarity: {lcss_similarity}\n')
-        f.writelines(f'Proposed similarity: {similarity}\n')
+        f.writelines(f'DTW + Corr similarity: {similarity}\n')
 
     return similarity, dtw_similarity, euclidean_similarity
 
@@ -632,7 +637,7 @@ def benchmark_comparison_ver2():
     print("Benchmark on Sin Curve Comparison Between Similarity Functions:", end="\n")
 
     # Configurations
-    degree, time_offset, value_offset, scale_value, noise_range, wrapped_time = 0, 200, 20, 1.5, 0.2, 100
+    degree, time_offset, value_offset, scale_value, noise_range, wrapped_time = 0, 100, 1, 1.5, 0.2, 100
     x = np.linspace(0, 5*np.pi, 1000)
     y = np.sin(x)
 
@@ -678,41 +683,40 @@ def benchmark_comparison_ver2():
 
 def benchmark_comparison_ver3():
 
-    print("Benchmark Comparison on Sin Curve Time Offset Animation Experiment:", end="\n")
+    # print("Benchmark Comparison on Sin Curve Time Offset Animation Experiment:", end="\n")
 
-    fig = plt.figure()
-    ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
-    line1, = ax.plot([], [], lw=3)
-    line2, = ax.plot([], [], lw=3)
-    text1 = ax.text(0.2, 1.6, '')
-    text2 = ax.text(0.2, 1.4, '')
-    text1.set_fontsize(12)
-    text2.set_fontsize(12)
+    # fig = plt.figure()
+    # ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
+    # line1, = ax.plot([], [], lw=3)
+    # line2, = ax.plot([], [], lw=3)
+    # text1 = ax.text(0.2, 1.6, '')
+    # text2 = ax.text(0.2, 1.4, '')
+    # text1.set_fontsize(12)
+    # text2.set_fontsize(12)
 
-    def init():
-        x = np.linspace(0, 4, 1000)
-        y = np.sin(2 * np.pi * x)
-        line1.set_data(x, y)
-        line2.set_data([], [])
-        return line1,
+    # def init_1():
+    #     x = np.linspace(0, 4, 1000)
+    #     y = np.sin(2 * np.pi * x)
+    #     line1.set_data(x, y)
+    #     line2.set_data([], [])
+    #     return line1,
 
-    def animate(i):
-        x1 = np.linspace(0, 4, 1000)
-        y1 = np.sin(2 * np.pi * x1)
-        x2 = np.linspace(0, 4, 1000)
-        y2 = np.sin(2 * np.pi * (x2 - 0.003 * i))
-        line2.set_data(x2, y2)
-        similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
-        text1.set_text(f"DTW    : {round(dtw_similarity, 2)}")
-        text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
-        return line2,
+    # def animate_1(i):
+    #     x1 = np.linspace(0, 4, 1000)
+    #     y1 = np.sin(2 * np.pi * x1)
+    #     x2 = np.linspace(0, 4, 1000)
+    #     y2 = np.sin(2 * np.pi * (x2 - 0.003 * i))
+    #     line2.set_data(x2, y2)
+    #     similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
+    #     text1.set_text(f"DTW   : {round(dtw_similarity, 2)}")
+    #     text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
+    #     return line2,
 
-    anim = FuncAnimation(fig, animate, init_func=init,
-                                frames=333, interval=20, blit=True)
-    anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_timeoffset.gif", writer='imagemagick')
+    # anim = FuncAnimation(fig, animate_1, init_func=init_1,
+    #                             frames=333, interval=20, blit=True)
+    # anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_timeoffset.gif", writer='imagemagick')
+    # plt.close(fig)
 
-
-def benchmark_comparison_ver4():
 
     print("Benchmark Comparison on Sin Curve Value Offset Animation Experiment:", end="\n")
 
@@ -725,27 +729,100 @@ def benchmark_comparison_ver4():
     text1.set_fontsize(12)
     text2.set_fontsize(12)
 
-    def init():
+    def init_2():
         x = np.linspace(0, 4, 1000)
         y = np.sin(2 * np.pi * x)
         line1.set_data(x, y)
         line2.set_data([], [])
         return line1,
 
-    def animate(i):
+    def animate_2(i):
         x1 = np.linspace(0, 4, 1000)
         y1 = np.sin(2 * np.pi * x1)
         x2 = np.linspace(0, 4, 1000)
-        y2 = np.sin(2 * np.pi * (x2 - 0.003 * i))
+        y2 = np.sin(2 * np.pi * x2) - 0.005 * i
         line2.set_data(x2, y2)
         similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
-        text1.set_text(f"DTW  : {round(dtw_similarity, 2)}")
+        text1.set_text(f"DTW : {round(dtw_similarity, 2)}")
         text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
         return line2,
 
-    anim = FuncAnimation(fig, animate, init_func=init,
-                                frames=333, interval=20, blit=True)
-    anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_timeoffset.gif", writer='imagemagick')
+    anim = FuncAnimation(fig, animate_2, init_func=init_2,
+                                frames=100, interval=20, blit=True)
+    anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_valueoffset.gif", writer='imagemagick')
+    plt.close(fig)
+
+
+    print("Benchmark Comparison on Sin Curve Scaled Value Animation Experiment:", end="\n")
+
+    fig = plt.figure()
+    ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
+    line1, = ax.plot([], [], lw=3)
+    line2, = ax.plot([], [], lw=3)
+    text1 = ax.text(0.2, 1.6, '')
+    text2 = ax.text(0.2, 1.4, '')
+    text1.set_fontsize(12)
+    text2.set_fontsize(12)
+
+    def init_3():
+        x = np.linspace(0, 4, 1000)
+        y = np.sin(2 * np.pi * x)
+        line1.set_data(x, y)
+        line2.set_data([], [])
+        return line1,
+
+    def animate_3(i):
+        x1 = np.linspace(0, 4, 1000)
+        y1 = np.sin(2 * np.pi * x1)
+        x2 = np.linspace(0, 4, 1000)
+        y2 = np.sin(2 * np.pi * x2) * 0.005 * i
+        line2.set_data(x2, y2)
+        similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
+        text1.set_text(f"DTW : {round(dtw_similarity, 2)}")
+        text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
+        return line2,
+
+    anim = FuncAnimation(fig, animate_3, init_func=init_3,
+                                frames=150, interval=20, blit=True)
+    anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_scaled.gif", writer='imagemagick')
+    plt.close(fig)
+
+
+    # print("Benchmark Comparison on Sin Curve Time Warped Animation Experiment:", end="\n")
+
+    # fig = plt.figure()
+    # ax = plt.axes(xlim=(0, 4), ylim=(-2, 2))
+    # line1, = ax.plot([], [], lw=3)
+    # line2, = ax.plot([], [], lw=3)
+    # text1 = ax.text(0.2, 1.6, '')
+    # text2 = ax.text(0.2, 1.4, '')
+    # text1.set_fontsize(12)
+    # text2.set_fontsize(12)
+
+    # def init_4():
+    #     x = np.linspace(0, 4, 1000)
+    #     y = np.sin(2 * np.pi * x)
+    #     line1.set_data(x, y)
+    #     line2.set_data([], [])
+    #     return line1,
+
+    # def animate_4(i):
+    #     x1 = np.linspace(0, 4, 1000)
+    #     y1 = np.sin(2 * np.pi * x1)
+    #     x2 = np.linspace(0, (4 - 0.002 * i), 1000)
+    #     y2 = np.sin(2 * np.pi * (x2))
+    #     x2 = x2 * ( 4 / (4 - 0.002 * i) )
+    #     line2.set_data(x2, y2)
+    #     similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
+    #     text1.set_text(f"DTW   : {round(dtw_similarity, 2)}")
+    #     text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
+    #     return line2,
+
+    # anim = FuncAnimation(fig, animate_4, init_func=init_4,
+    #                             frames=150, interval=20, blit=True)
+    # anim.save(f"./output/{TIMESTAMP[:-1]}/DTW_warped.gif", writer='imagemagick')
+    # plt.close(fig)
+
 
 
 # Define Configurations
@@ -833,8 +910,5 @@ if __name__ == "__main__":
         # Benchmark on Sin Curve
         # benchmark_comparison_ver2()
 
-        # Benchmark on Sin Curve Time offset Animation Experiment
+        # Benchmark on Sin Curve Animation Experiment
         benchmark_comparison_ver3()
-
-        # Benchmark on Sin Curve Value offset Animation Experiment
-        # benchmark_comparison_ver4()
