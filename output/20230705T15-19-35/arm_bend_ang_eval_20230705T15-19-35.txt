@@ -1,0 +1,5 @@
+<arm_bend_ang>
+Euclidean similarity: 18.14214092670686
+Pearson Correlation similarity: 0
+DTW similarity: 29.24808900298204
+DTW + Corr similarity: 29.24808900298204

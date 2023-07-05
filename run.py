@@ -345,23 +345,27 @@ def lcss_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feat
 
 def similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature):
 
-    # Rescale the time series with MinMaxScaler()
-    # scaler = MinMaxScaler()
-    # scaler.fit(np.concatenate((s1_feature, s2_feature), axis=0).reshape(-1, 1))
+    # Rescale the time series with MinMaxScaler() and align y-axis
+    scaler = MinMaxScaler()
+    scaler.fit(np.concatenate((s1_feature, s2_feature), axis=0).reshape(-1, 1))
+    s1_feature_scaled = scaler.transform(s1_feature.reshape(-1, 1))
+    s2_feature_scaled = scaler.transform(s2_feature.reshape(-1, 1))
+    s_mean = (np.mean(s1_feature_scaled) + np.mean(s2_feature_scaled)) / 2
+    s1_diff, s2_diff = abs(np.mean(s1_feature_scaled) - s_mean), abs(np.mean(s2_feature_scaled) - s_mean)
+    s1_feature = [[i[0] - s1_diff] for i in s1_feature_scaled] if np.mean(s1_feature_scaled) > s_mean else [[i[0] + s1_diff] for i in s1_feature_scaled]
+    s2_feature = [[i[0] - s2_diff] for i in s2_feature_scaled] if np.mean(s2_feature_scaled) > s_mean else [[i[0] + s2_diff] for i in s2_feature_scaled]
+    # s1_feature, s2_feature = s1_feature_scaled, s2_feature_scaled
+    print(s1_feature_scaled.shape, s2_feature_scaled.shape)
+
+    # Rescale the time series with StandardScaler()
+    # scaler = StandardScaler()
+    # scaler.fit(s1_feature.reshape(-1, 1))
     # s1_feature_scaled = scaler.transform(s1_feature.reshape(-1, 1))
+    # scaler = StandardScaler()
+    # scaler.fit(s2_feature.reshape(-1, 1))
     # s2_feature_scaled = scaler.transform(s2_feature.reshape(-1, 1))
     # s1_feature, s2_feature = s1_feature_scaled, s2_feature_scaled
     # print(s1_feature_scaled.shape, s2_feature_scaled.shape)
-
-    # Rescale the time series with StandardScaler()
-    scaler = StandardScaler()
-    scaler.fit(s1_feature.reshape(-1, 1))
-    s1_feature_scaled = scaler.transform(s1_feature.reshape(-1, 1))
-    scaler = StandardScaler()
-    scaler.fit(s2_feature.reshape(-1, 1))
-    s2_feature_scaled = scaler.transform(s2_feature.reshape(-1, 1))
-    s1_feature, s2_feature = s1_feature_scaled, s2_feature_scaled
-    print(s1_feature_scaled.shape, s2_feature_scaled.shape)
 
     # Evaluate the Similarity of two subjects.
     old_similarity = meanStd_similarity_function(feature_name, s1_time, s2_time, s1_feature, s2_feature)
@@ -778,8 +782,8 @@ def benchmark_comparison_ver3():
         y2 = np.sin(2 * np.pi * x2) * 0.005 * i
         line2.set_data(x2, y2)
         similarity, dtw_similarity, euclidean_similarity = similarity_function('benchmark_timeoffset', x1, x2, y1, y2)
-        text1.set_text(f"DTW : {round(dtw_similarity + np.random.uniform(-3,-1,1)[0], 2)}")
-        text2.set_text(f"Euclid : {round(euclidean_similarity + np.random.uniform(-3,-1,1)[0], 2)}")
+        text1.set_text(f"DTW : {round(dtw_similarity, 2)}")
+        text2.set_text(f"Euclid : {round(euclidean_similarity, 2)}")
         return line2,
 
     anim = FuncAnimation(fig, animate_3, init_func=init_3,
@@ -908,7 +912,7 @@ if __name__ == "__main__":
         # benchmark_comparison_ver1(s1_strokes_kp, s1_video_fps)
 
         # Benchmark on Sin Curve
-        # benchmark_comparison_ver2()
+        benchmark_comparison_ver2()
 
         # Benchmark on Sin Curve Animation Experiment
-        benchmark_comparison_ver3()
+        # benchmark_comparison_ver3()

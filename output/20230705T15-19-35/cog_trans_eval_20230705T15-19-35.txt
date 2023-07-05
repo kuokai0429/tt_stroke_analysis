@@ -1,0 +1,5 @@
+<cog_trans>
+Euclidean similarity: 49.9921060207646
+Pearson Correlation similarity: 9.168554353546774
+DTW similarity: 40.14310471064479
+DTW + Corr similarity: 40.14310471064479
